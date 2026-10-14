@@ -114,10 +114,10 @@ const STEPS = [
    <tr><td class="n">1h 20m</td><td class="n">60 + 20</td><td class="n">80</td></tr>
    <tr><td class="n">2h 35m</td><td class="n">120 + 35</td><td class="n">155</td></tr></tbody></table></div>
    <p>Round grams to a whole number (24.6 g → 25). Then take your screenshot: <kbd>Windows</kbd> + <kbd>Shift</kbd> + <kbd>S</kbd>, box the whole window so all copies and the numbers show.</p>`},
- {id:'export', title:'Export the sliced file', view:[1060,0,860,1080], viewCrop:[1180,880,740,160],
-  boxes:[[1297,987,152,29,'1']],
-  legend:['Click <b>Export all sliced file</b> and save it as <code>LastName_PartName</code>.'],
-  extra:`<p>The file ends in <b>.gcode.3mf</b>. That's the right one; upload it to the form's <i>Upload Sliced File</i> question along with your screenshot.</p><div class="good">Done in the slicer. Now fill out the 3D Print Request form.</div>`}
+ {id:'save', title:'Save the project file', view:[0,0,860,230],
+  boxes:[[56,6,56,28,'1']],
+  legend:['Click <b>File › Save Project As</b> and save it as <code>LastName_PartName</code>.'],
+  extra:`<p>The file ends in <b>.3mf</b> (just <b>.3mf</b>, not .gcode.3mf). Upload that file to the form along with your screenshot.</p><p class="why">Don't use <b>Export all sliced file</b>. That makes a .gcode.3mf that Mr. Brown can't adjust. The project .3mf keeps your part, copies, and orientation so he can fix and re-slice it if needed.</p><div class="good">Done in the slicer. Now fill out the 3D Print Request form.</div>`}
 ];
 
 function zoomSVG(s,i,v){
