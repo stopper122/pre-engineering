@@ -2931,8 +2931,29 @@
                     tx.update(ref,fields);
                 });
             };
+            // Per-item decisions in the approval queue: {requestId: {lineIndex: true}} marks a line as denied.
+            const [deniedLines, setDeniedLines] = useState({});
+            const toggleLineDenied = (reqId, idx) => setDeniedLines(prev => {
+                const rows = {...(prev[reqId] || {})};
+                if (rows[idx]) delete rows[idx]; else rows[idx] = true;
+                return {...prev, [reqId]: rows};
+            });
             const handleApprove = async req => {
-                try {await updateRequestStatus(req,'Pending',{status:'Approved',notes:'Approved for pickup at bench desk.',approvedAt:new Date().toISOString(),approvedBy:authUser.uid});showToast('Request approved.','success')}
+                const denied = deniedLines[req.id] || {};
+                const items = req.items || [];
+                const keep = items.filter((_, i) => !denied[i]);
+                const dropped = items.filter((_, i) => denied[i]);
+                if (!keep.length) { setDenialModalReq(req); return; }
+                const notes = dropped.length
+                    ? 'Approved for pickup at bench desk. Not approved: ' + dropped.map(i => i.itemName + ' (x' + i.qty + ')').join(', ') + '.'
+                    : 'Approved for pickup at bench desk.';
+                const fields = {status:'Approved',notes,approvedAt:new Date().toISOString(),approvedBy:authUser.uid};
+                if (dropped.length) { fields.items = keep; fields.deniedItems = dropped; }
+                try {
+                    await updateRequestStatus(req,'Pending',fields);
+                    setDeniedLines(prev => { const n = {...prev}; delete n[req.id]; return n; });
+                    showToast(dropped.length ? `Approved ${keep.length} of ${items.length} items.` : 'Request approved.','success');
+                }
                 catch(err){setCloudError(err.message);showToast('Approval was not saved.','error')}
             };
             const handleDeny = async () => {
@@ -3751,6 +3772,11 @@
                                                                     {it.itemName} (x{it.qty}){activeLoan(req) && returnRequired(it)?` · ${lineOutstanding(it)} still out`:it.returnedQty||it.damagedQty?' · accounted for':''}
                                                                 </span>
                                                             ))}
+                                                            {(req.deniedItems || []).map((it, idx) => (
+                                                                <span key={'d'+idx} className="text-[11px] px-2 py-0.5 rounded bg-rose-950/60 text-rose-300 border border-rose-800">
+                                                                    <span className="line-through">{it.itemName} (x{it.qty})</span> · not approved
+                                                                </span>
+                                                            ))}
                                                         </div>
                                                         {req.notes && (
                                                             <p className="text-xs text-amber-400 mt-1 italic">
@@ -3808,10 +3834,13 @@
                                                             Project: <span className="font-semibold text-slate-100">{req.projectName}</span>
                                                         </p>
 
-                                                        <div className="flex flex-wrap gap-2 pt-2">
-                                                            {req.items && req.items.map((it, idx) => (
-                                                                <span key={idx} className="text-xs px-2.5 py-1 rounded-lg bg-slate-950 text-sky-300 border border-slate-800 font-medium flex items-center gap-1.5 flex-wrap">
-                                                                    <span>{it.itemName} (x{it.qty} {it.unit || 'pcs'})</span>
+                                                        <p className="text-[11px] text-slate-500 pt-2">Tap an item to deny just that item. Then press Approve for the rest.</p>
+                                                        <div className="flex flex-wrap gap-2 pt-1">
+                                                            {req.items && req.items.map((it, idx) => { const isDenied = !!(deniedLines[req.id] || {})[idx]; return (
+                                                                <button type="button" key={idx} onClick={() => toggleLineDenied(req.id, idx)} aria-pressed={isDenied} title={isDenied ? 'Denied. Tap to approve this item again.' : 'Approved. Tap to deny this item.'}
+                                                                    className={`text-xs px-2.5 py-1 rounded-lg border font-medium flex items-center gap-1.5 flex-wrap text-left transition-colors ${isDenied ? 'bg-rose-950/60 text-rose-300 border-rose-700' : 'bg-slate-950 text-sky-300 border-slate-800 hover:border-emerald-600'}`}>
+                                                                    <span className={`w-4 h-4 rounded-full grid place-items-center text-[10px] font-bold ${isDenied ? 'bg-rose-600 text-white' : 'bg-emerald-600 text-white'}`}>{isDenied ? '✕' : '✓'}</span>
+                                                                    <span className={isDenied ? 'line-through' : ''}>{it.itemName} (x{it.qty} {it.unit || 'pcs'})</span>
                                                                     {it.specifiedLength && (
                                                                         <span className="px-1.5 py-0.2 rounded bg-amber-950 text-amber-400 border border-amber-800 text-[10px] font-mono font-bold">
                                                                             {it.specifiedLength}
@@ -3822,19 +3851,21 @@
                                                                             {it.specifiedDim}
                                                                         </span>
                                                                     )}
-                                                                </span>
-                                                            ))}
+                                                                </button>
+                                                            ); })}
                                                         </div>
                                                     </div>
 
                                                     <div className="flex items-center gap-2 w-full md:w-auto justify-end">
+                                                        {(() => { const total = (req.items || []).length; const deniedCount = Object.keys(deniedLines[req.id] || {}).length; const keepCount = total - deniedCount; return (
                                                         <button 
                                                             onClick={() => handleApprove(req)}
-                                                            className="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl text-xs font-bold flex items-center gap-1.5 transition-colors shadow-md"
+                                                            className={`px-4 py-2 ${keepCount === 0 ? 'bg-rose-700 hover:bg-rose-600' : 'bg-emerald-600 hover:bg-emerald-500'} text-white rounded-xl text-xs font-bold flex items-center gap-1.5 transition-colors shadow-md`}
                                                         >
                                                             <i data-lucide="check" className="w-4 h-4"></i>
-                                                            Approve
+                                                            {deniedCount === 0 ? 'Approve' : keepCount === 0 ? 'Deny All' : `Approve ${keepCount} of ${total}`}
                                                         </button>
+                                                        ); })()}
                                                         <button 
                                                             onClick={() => setDenialModalReq(req)}
                                                             className="px-4 py-2 bg-rose-950 border border-rose-800 text-rose-300 hover:bg-rose-900 rounded-xl text-xs font-bold flex items-center gap-1.5 transition-colors"
