@@ -2357,7 +2357,7 @@
         const activeLoan = req => ['Checked Out','Partially Returned'].includes(req.status);
 
         function App() {
-            const [role, setRole] = useState('student'); // 'student' or 'instructor'
+            const [role, setRole] = useState(() => { try { return localStorage.getItem('labtrack-instructor-pin-v1') && localStorage.getItem('labtrack-last-role-v1') === 'instructor' ? 'instructor' : 'student'; } catch (_) { return 'student'; } }); // 'student' or 'instructor'
             const [activeTab, setActiveTab] = useState('catalog'); // 'catalog', 'cart', 'my_status', 'requests', 'returns', 'inventory', 'roster'
             const [catalogSubTab, setCatalogSubTab] = useState('all'); // 'all', 'equipment', 'consumables'
             const [inventorySubTab, setInventorySubTab] = useState('all'); // 'all', 'equipment', 'consumables'
@@ -2421,6 +2421,22 @@
             const [instructorPin, setInstructorPin] = useState('');
             const [instructorEmail, setInstructorEmail] = useState('');
             const [isInstructorUnlocked, setIsInstructorUnlocked] = useState(false);
+            // Tablet PIN: after one email/password sign-in with "Remember this device",
+            // the device stays signed in and the instructor view only asks for a PIN.
+            const PIN_KEY = 'labtrack-instructor-pin-v1', ROLE_KEY = 'labtrack-last-role-v1';
+            const readLocal = k => { try { return localStorage.getItem(k) || ''; } catch (_) { return ''; } };
+            const writeLocal = (k, v) => { try { if (v) localStorage.setItem(k, v); else localStorage.removeItem(k); } catch (_) {} };
+            const hashPin = async pin => {
+                const bytes = new TextEncoder().encode('labtrack:' + pin);
+                const digest = await crypto.subtle.digest('SHA-256', bytes);
+                return Array.from(new Uint8Array(digest)).map(b => b.toString(16).padStart(2, '0')).join('');
+            };
+            const INSTRUCTOR_PIN_HASH = '9775e89c6dd4f7651a57e142f7b20ab1e88ff75def235b6e3c9f55cd786ef5fa'; // SHA-256 of 'labtrack:' + PIN
+            const [devicePinHash, setDevicePinHash] = useState(() => readLocal(PIN_KEY) ? INSTRUCTOR_PIN_HASH : '');
+            const [pinOk, setPinOk] = useState(false);
+            const [pinEntry, setPinEntry] = useState('');
+            const [rememberDevice, setRememberDevice] = useState(true);
+            const [authChecked, setAuthChecked] = useState(false);
             const [isQRModalOpen, setIsQRModalOpen] = useState(false);
             const [denialModalReq, setDenialModalReq] = useState(null);
             const [denialReason, setDenialReason] = useState('');
@@ -2533,6 +2549,7 @@
             const signOutInstructor = async () => {
                 if(!window.FB)return;
                 setIsInstructorUnlocked(false);setRole('student');setRequests([]);setActiveTab('catalog');
+                setPinOk(false);setDevicePinHash('');writeLocal(PIN_KEY,'');writeLocal(ROLE_KEY,'');
                 await window.FB.signOut(window.FB.auth);
                 await window.FB.signInAnonymously(window.FB.auth);
             };
@@ -2833,8 +2850,12 @@
                             if(active && current===revision) setIsInstructorUnlocked(marker.exists() && marker.data().enabled===true);
                         } catch(err) {if(active)setCloudError((err.code||'Teacher check')+': '+err.message)}
                     }
+                    if(user && active && current===revision) setAuthChecked(true);
                 });
-                if(!fb.auth.currentUser)fb.signInAnonymously(fb.auth).catch(err=>{if(active)setCloudError((err.code||'Authentication')+': '+err.message)});
+                // Wait for a saved sign-in to load before falling back to an anonymous student session.
+                Promise.resolve(fb.auth.authStateReady ? fb.auth.authStateReady() : null).then(()=>{
+                    if(active && !fb.auth.currentUser)return fb.signInAnonymously(fb.auth);
+                }).catch(err=>{if(active)setCloudError((err.code||'Authentication')+': '+err.message)});
                 return ()=>{active=false;unsubscribe()};
             }, [cloudStatus.phase]);
             useEffect(() => {
@@ -3101,17 +3122,28 @@
             };
 
 
+            const handlePinUnlock = async e => {
+                e.preventDefault();
+                if (devicePinHash && await hashPin(pinEntry) === devicePinHash) {
+                    setPinOk(true); setPinEntry(''); setActiveTab('requests'); writeLocal(ROLE_KEY, 'instructor');
+                } else {
+                    setPinEntry(''); showToast('Wrong PIN.', 'error');
+                }
+            };
             const handleUnlockInstructor = async e => {
                 e.preventDefault();
                 try {
                     if(!window.FB)throw new Error('Configure the Firebase connection first.');
                     const fb=window.FB;
-                    await fb.setPersistence(fb.auth,fb.browserSessionPersistence);
+                    await fb.setPersistence(fb.auth,rememberDevice?fb.browserLocalPersistence:fb.browserSessionPersistence);
                     const credentials=await fb.signInWithEmailAndPassword(fb.auth,instructorEmail.trim(),instructorPin);
                     const marker=await fb.getDoc(fb.doc(fb.db,'teachers',credentials.user.uid));
                     if(!marker.exists()||marker.data().enabled!==true){await fb.signOut(fb.auth);await fb.signInAnonymously(fb.auth);throw new Error('This account is not enabled as an instructor. Add its teachers/{UID} document in Firebase.');}
+                    if(rememberDevice){writeLocal(PIN_KEY,'1');setDevicePinHash(INSTRUCTOR_PIN_HASH);}
+                    else {writeLocal(PIN_KEY,'');setDevicePinHash('');}
+                    setPinOk(true);writeLocal(ROLE_KEY,'instructor');
                     setInstructorPin('');setIsInstructorUnlocked(true);setRole('instructor');setActiveTab('requests');
-                    showToast('Instructor signed in.','success');
+                    showToast(rememberDevice?'Signed in. Next time on this device, just enter your PIN.':'Instructor signed in.','success');
                 } catch(err) {setCloudError((err.code||'Sign-in')+': '+err.message);showToast('Instructor sign-in failed.','error')}
             };
 
@@ -3192,6 +3224,8 @@
                                     onClick={() => {
                                         setRole('student');
                                         setActiveTab('catalog');
+                                        setPinOk(false);
+                                        writeLocal(ROLE_KEY, 'student');
                                     }}
                                     className={`px-3 py-1 rounded-md text-xs font-semibold transition-all flex items-center gap-1.5 ${
                                         role === 'student' ? 'bg-sky-600 text-white shadow-md' : 'text-slate-400 hover:text-slate-200'
@@ -3230,8 +3264,8 @@
                             </div>
                             <div className="flex gap-2 flex-wrap">
                                 <button type="button" onClick={()=>setCloudSettingsOpen(!cloudSettingsOpen)} className="px-3 py-2 rounded bg-slate-800">Connection setup</button>
-                                {isInstructorUnlocked && <button type="button" onClick={()=>signOutInstructor().catch(err=>setCloudError(err.message))} className="px-3 py-2 rounded bg-slate-800">Sign out instructor</button>}
-                                {isInstructorUnlocked && inventoryOnline && inventoryEmpty && <button type="button" disabled={cloudBusy} onClick={initializeCatalog} className="px-3 py-2 rounded bg-amber-600 text-black">Initialize shared catalog</button>}
+                                {isInstructorUnlocked && (pinOk || !devicePinHash) && <button type="button" onClick={()=>signOutInstructor().catch(err=>setCloudError(err.message))} className="px-3 py-2 rounded bg-slate-800">Sign out instructor</button>}
+                                {isInstructorUnlocked && (pinOk || !devicePinHash) && inventoryOnline && inventoryEmpty && <button type="button" disabled={cloudBusy} onClick={initializeCatalog} className="px-3 py-2 rounded bg-amber-600 text-black">Initialize shared catalog</button>}
                             </div>
                         </div>
                         {cloudError && <p className="mt-2 text-rose-300" role="alert">{cloudError}</p>}
@@ -3271,7 +3305,20 @@
                     )}
 
                     {/* INSTRUCTOR PIN UNLOCK GUARD */}
-                    {role === 'instructor' && !isInstructorUnlocked ? (
+                    {role === 'instructor' && isInstructorUnlocked && devicePinHash && !pinOk ? (
+                        <div className="flex-1 flex items-center justify-center p-6">
+                            <form onSubmit={handlePinUnlock} className="bg-slate-900 border border-slate-800 rounded-2xl max-w-xs w-full p-6 text-center space-y-4 shadow-2xl">
+                                <h2 className="text-lg font-bold text-slate-100">Enter instructor PIN</h2>
+                                <input type="password" inputMode="numeric" pattern="[0-9]*" autoComplete="off" autoFocus maxLength={8}
+                                    value={pinEntry} onChange={e => setPinEntry(e.target.value.replace(/\D/g, ''))} placeholder="PIN"
+                                    className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-center font-mono text-2xl tracking-[0.4em] text-slate-100 focus:outline-none focus:border-amber-500" />
+                                <button type="submit" className="w-full py-2.5 bg-amber-600 hover:bg-amber-500 text-slate-950 font-bold text-sm rounded-xl">Unlock</button>
+                                <button type="button" onClick={() => signOutInstructor().catch(err => setCloudError(err.message))} className="text-xs text-slate-400 underline">Forgot PIN? Sign in with email instead</button>
+                            </form>
+                        </div>
+                    ) : role === 'instructor' && !isInstructorUnlocked && !authChecked ? (
+                        <div className="flex-1 flex items-center justify-center p-6 text-slate-400 text-sm">Checking sign-in…</div>
+                    ) : role === 'instructor' && !isInstructorUnlocked ? (
                         <div className="flex-1 flex items-center justify-center p-6">
                             <div className="bg-slate-900 border border-slate-800 rounded-2xl max-w-sm w-full p-6 text-center space-y-4 shadow-2xl">
                                 <div className="w-12 h-12 bg-amber-950/80 border border-amber-700/60 text-amber-400 rounded-2xl flex items-center justify-center mx-auto">
@@ -3290,6 +3337,10 @@
                                         onChange={(e) => setInstructorPin(e.target.value)}
                                         className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-2.5 text-center font-mono text-slate-100 focus:outline-none focus:border-amber-500 text-sm"
                                     />
+                                    <label className="flex items-start gap-2 text-left text-xs text-slate-300">
+                                        <input type="checkbox" checked={rememberDevice} onChange={e => setRememberDevice(e.target.checked)} className="mt-0.5" />
+                                        <span>Remember this device. After this, it only asks for the instructor PIN. Use only on your own tablet or PC.</span>
+                                    </label>
                                     <button 
                                         type="submit"
                                         className="w-full py-2.5 bg-amber-600 hover:bg-amber-500 text-slate-950 font-bold text-xs uppercase tracking-wider rounded-xl transition-colors"
