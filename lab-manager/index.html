@@ -85,7 +85,7 @@
     "appId": "1:317061817972:web:60634a37ebcd70edccd321"
   }
 };
-        window.LAB_RULES = "rules_version = '2';\nservice cloud.firestore {\n  match /databases/{database}/documents {\n    function signedIn() { return request.auth != null; }\n    function teacher() {\n      return signedIn() && exists(/databases/$(database)/documents/teachers/$(request.auth.uid))\n        && get(/databases/$(database)/documents/teachers/$(request.auth.uid)).data.enabled == true;\n    }\n    match /teachers/{uid} {\n      allow get: if signedIn() && request.auth.uid == uid;\n      allow list, create, update, delete: if false;\n    }\n    match /artifacts/brown-preengineering/public/data/inventory/{id} {\n      allow read: if signedIn();\n      allow write: if teacher();\n    }\n    match /artifacts/brown-preengineering/public/data/meta/{id} {\n      allow read, write: if teacher();\n    }\n    match /artifacts/brown-preengineering/public/data/requests/{id} {\n      allow get: if teacher() || (signedIn() && (!exists(/databases/$(database)/documents/artifacts/brown-preengineering/public/data/requests/$(id)) || resource.data.ownerUid == request.auth.uid));\n      allow list: if teacher() || (signedIn() && resource.data.ownerUid == request.auth.uid);\n      allow create: if signedIn()\n        && request.resource.data.keys().hasOnly(['ownerUid','studentName','studentPeriod','projectName','expectedReturn','items','status','createdAt','requestTimestamp','notes'])\n        && request.resource.data.ownerUid == request.auth.uid\n        && request.resource.data.status == 'Pending'\n        && request.resource.data.notes == ''\n        && request.resource.data.studentName is string && request.resource.data.studentName.size() > 0 && request.resource.data.studentName.size() <= 150\n        && request.resource.data.studentPeriod is string && request.resource.data.studentPeriod.size() <= 100\n        && request.resource.data.projectName is string && request.resource.data.projectName.size() > 0 && request.resource.data.projectName.size() <= 500\n        && request.resource.data.expectedReturn is string && request.resource.data.expectedReturn.size() <= 100\n        && request.resource.data.createdAt is string\n        && request.resource.data.requestTimestamp is string\n        && request.resource.data.items is list && request.resource.data.items.size() > 0 && request.resource.data.items.size() <= 100;\n      allow update, delete: if teacher();\n    }\n  }\n}";
+        window.LAB_RULES = "rules_version = '2';\nservice cloud.firestore {\n  match /databases/{database}/documents {\n    function signedIn() { return request.auth != null; }\n    function teacher() {\n      return signedIn() && exists(/databases/$(database)/documents/teachers/$(request.auth.uid))\n        && get(/databases/$(database)/documents/teachers/$(request.auth.uid)).data.enabled == true;\n    }\n    match /teachers/{uid} {\n      allow get: if signedIn() && request.auth.uid == uid;\n      allow list, create, update, delete: if false;\n    }\n    match /artifacts/brown-preengineering/public/data/inventory/{id} {\n      allow read: if signedIn();\n      allow write: if teacher();\n    }\n    match /artifacts/brown-preengineering/public/data/meta/{id} {\n      allow read, write: if teacher();\n    }\n    match /artifacts/brown-preengineering/public/data/requests/{id} {\n      allow get: if teacher() || (signedIn() && (!exists(/databases/$(database)/documents/artifacts/brown-preengineering/public/data/requests/$(id)) || resource.data.ownerUid == request.auth.uid));\n      allow list: if teacher() || (signedIn() && resource.data.ownerUid == request.auth.uid);\n      allow create: if teacher() || (signedIn()\n        && request.resource.data.keys().hasOnly(['ownerUid','studentName','studentPeriod','projectName','expectedReturn','items','status','createdAt','requestTimestamp','notes'])\n        && request.resource.data.ownerUid == request.auth.uid\n        && request.resource.data.status == 'Pending'\n        && request.resource.data.notes == ''\n        && request.resource.data.studentName is string && request.resource.data.studentName.size() > 0 && request.resource.data.studentName.size() <= 150\n        && request.resource.data.studentPeriod is string && request.resource.data.studentPeriod.size() <= 100\n        && request.resource.data.projectName is string && request.resource.data.projectName.size() > 0 && request.resource.data.projectName.size() <= 500\n        && request.resource.data.expectedReturn is string && request.resource.data.expectedReturn.size() <= 100\n        && request.resource.data.createdAt is string\n        && request.resource.data.requestTimestamp is string\n        && request.resource.data.items is list && request.resource.data.items.size() > 0 && request.resource.data.items.size() <= 100);\n      allow update, delete: if teacher();\n    }\n  }\n}";
         window.LAB = {
             settings: null, status: {phase:'setup', message:'Connect your Firebase project to enable live requests.'},
             publish(status) { this.status = status; window.dispatchEvent(new Event('lab-connection')); },
@@ -3995,7 +3995,9 @@
                                             <button 
                                                 onClick={() => {
                                                     const exportData = {
+                                                        backupVersion: 2,
                                                         inventory,
+                                                        requests,
                                                         projectOptions,
                                                         periodOptions,
                                                         cachedImages: getCachedImages(),
@@ -4005,21 +4007,21 @@
                                                     const url = URL.createObjectURL(blob);
                                                     const a = document.createElement('a');
                                                     a.href = url;
-                                                    a.download = `labtrack-inventory-backup-${new Date().toISOString().slice(0, 10)}.json`;
+                                                    a.download = `labtrack-backup-${new Date().toISOString().slice(0, 10)}.json`;
                                                     a.click();
                                                     URL.revokeObjectURL(url);
-                                                    showToast('Exported inventory & photo backup!', 'success');
+                                                    showToast(`Backup saved: ${inventory.length} items and ${requests.length} requests.`, 'success');
                                                 }}
                                                 className="px-3 py-2 bg-slate-800 hover:bg-slate-700 text-sky-300 border border-slate-700 rounded-xl text-xs font-semibold flex items-center gap-1.5 transition-colors"
-                                                title="Download a backup file of all your items and uploaded photos"
+                                                title="Download a backup file of all items, photos, settings, and student requests"
                                             >
                                                 <i data-lucide="download" className="w-3.5 h-3.5"></i>
-                                                Backup Photos & Data
+                                                Export Backup
                                             </button>
 
                                             <label className="cursor-pointer px-3 py-2 bg-slate-800 hover:bg-slate-700 text-amber-300 border border-slate-700 rounded-xl text-xs font-semibold flex items-center gap-1.5 transition-colors">
                                                 <i data-lucide="upload" className="w-3.5 h-3.5"></i>
-                                                Restore Backup
+                                                Import Backup
                                                 <input 
                                                     type="file" 
                                                     accept=".json" 
@@ -4028,27 +4030,43 @@
                                                         const file = e.target.files && e.target.files[0];
                                                         if (!file) return;
                                                         const reader = new FileReader();
+                                                        e.target.value = '';
                                                         reader.onload = async (event) => {
+                                                            let parsed;
+                                                            try { parsed = JSON.parse(event.target.result); }
+                                                            catch (err) { showToast('That file is not a LabTrack backup.', 'error'); return; }
+                                                            const items = Array.isArray(parsed.inventory) ? parsed.inventory.filter(i => i && i.id) : [];
+                                                            const reqs = Array.isArray(parsed.requests) ? parsed.requests.filter(r => r && r.id) : [];
+                                                            if (!items.length && !reqs.length) { showToast('That file is not a LabTrack backup.', 'error'); return; }
+                                                            const when = parsed.exportedAt ? new Date(parsed.exportedAt).toLocaleString() : 'an unknown date';
+                                                            if (!window.confirm(`Import backup from ${when}?\n\n${items.length} items and ${reqs.length} requests will be written to the shared database. Anything in the backup replaces the current version. Items and requests that are not in the backup are left alone.`)) return;
                                                             try {
                                                                 requireConnection(true);
-                                                                const parsed = JSON.parse(event.target.result);
+                                                                if (!(window.FB && authUser && isInstructorUnlocked)) throw new Error('Sign in as instructor first.');
                                                                 if (parsed.cachedImages) {
                                                                     localStorage.setItem(IMAGE_CACHE_KEY, JSON.stringify(parsed.cachedImages));
                                                                 }
-                                                                if (Array.isArray(parsed.inventory)) {
-                                                                    setInventory(parsed.inventory);
-                                                                    if (window.FB && authUser && isInstructorUnlocked) {
-                                                                        const { db, appId, doc, setDoc } = window.FB;
-                                                                        for (let item of parsed.inventory) {
-                                                                            await setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'inventory', item.id), item);
-                                                                        }
-                                                                        if(Array.isArray(parsed.projectOptions))await setDoc(doc(db,'artifacts',appId,'public','data','inventory',PROJECT_SETTINGS_ID),{recordType:'project-options',projectOptions:normalizeProjectOptions(parsed.projectOptions),updatedAt:new Date().toISOString()});
-                                                                        if(Array.isArray(parsed.periodOptions))await setDoc(doc(db,'artifacts',appId,'public','data','inventory',PERIOD_SETTINGS_ID),{recordType:'period-options',periodOptions:parsePeriodDraft(parsed.periodOptions.join('\n')),updatedAt:new Date().toISOString()});
-                                                                    }
+                                                                const { db, appId, doc, setDoc } = window.FB;
+                                                                for (const item of items) {
+                                                                    await setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'inventory', item.id), item);
                                                                 }
-                                                                showToast('Restored inventory and photos successfully!', 'success');
+                                                                if(Array.isArray(parsed.projectOptions))await setDoc(doc(db,'artifacts',appId,'public','data','inventory',PROJECT_SETTINGS_ID),{recordType:'project-options',projectOptions:normalizeProjectOptions(parsed.projectOptions),updatedAt:new Date().toISOString()});
+                                                                if(Array.isArray(parsed.periodOptions))await setDoc(doc(db,'artifacts',appId,'public','data','inventory',PERIOD_SETTINGS_ID),{recordType:'period-options',periodOptions:parsePeriodDraft(parsed.periodOptions.join('\n')),updatedAt:new Date().toISOString()});
+                                                                let restored = 0, blocked = 0;
+                                                                for (const r of reqs) {
+                                                                    const { id, ...data } = r;
+                                                                    try { await setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'requests', id), data); restored++; }
+                                                                    catch (err) { if (err.code === 'permission-denied') blocked++; else throw err; }
+                                                                }
+                                                                if (blocked) {
+                                                                    setCloudError(`${blocked} deleted request(s) could not be restored because your Firestore rules are out of date. Open "Connection setup", copy the Firestore rules, publish them in the Firebase console, then import again.`);
+                                                                    showToast(`Imported ${items.length} items and ${restored} requests. ${blocked} need a rules update.`, 'warning');
+                                                                } else {
+                                                                    showToast(`Imported ${items.length} items and ${restored} requests.`, 'success');
+                                                                }
                                                             } catch (err) {
-                                                                showToast('Invalid backup file', 'error');
+                                                                setCloudError('Import stopped: ' + err.message);
+                                                                showToast('Import did not finish. See the message at the top.', 'error');
                                                             }
                                                         };
                                                         reader.readAsText(file);
