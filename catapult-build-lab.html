@@ -1,0 +1,496 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Catapult Build Lab</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:wght@400;700&family=Lexend:wght@500;700&display=swap">
+<style>
+/* Layout: the 3D build in the middle, the step coach on the right (stacks on phones). */
+:root{
+  --bg:#eef0f2; --panel:#ffffff; --ink:#17212b; --muted:#56616d; --line:#d3dae1;
+  --accent:#c4501a; --accent-ink:#ffffff; --accent-soft:#fbe8dd;
+  --new:#2b7de9; --new-soft:#e1edfd; --chip:#f2f5f7; --scene:#e3e7eb;
+  --display:"Lexend","Segoe UI",system-ui,sans-serif;
+  --body:"Atkinson Hyperlegible","Segoe UI",system-ui,sans-serif;
+}
+@media (prefers-color-scheme: dark){ :root:not([data-theme="light"]){
+  --bg:#111519; --panel:#1a2027; --ink:#e6edf3; --muted:#9ba8b5; --line:#2d3742;
+  --accent:#ff9a5c; --accent-ink:#2a1206; --accent-soft:#3a2518;
+  --new:#6aa6ff; --new-soft:#172a44; --chip:#222a33; --scene:#1f2730; color-scheme:dark;
+}}
+:root[data-theme="dark"]{
+  --bg:#111519; --panel:#1a2027; --ink:#e6edf3; --muted:#9ba8b5; --line:#2d3742;
+  --accent:#ff9a5c; --accent-ink:#2a1206; --accent-soft:#3a2518;
+  --new:#6aa6ff; --new-soft:#172a44; --chip:#222a33; --scene:#1f2730; color-scheme:dark;
+}
+[hidden]{display:none!important}
+html,body{height:100%;margin:0}
+body{background:var(--bg);color:var(--ink);font-family:var(--body);font-size:16px;line-height:1.45;overflow:hidden}
+button{font:inherit;color:inherit}
+.app{height:100%;box-sizing:border-box;display:grid;grid-template-columns:minmax(0,1fr) 360px;grid-template-rows:auto minmax(0,1fr);gap:12px;padding:12px 16px}
+header{grid-column:1/-1;display:flex;flex-wrap:wrap;align-items:center;gap:8px 16px}
+.brand{margin-right:auto;min-width:0}
+.brand h1{font-family:var(--display);font-weight:700;font-size:22px;margin:0}
+.brand p{margin:0;color:var(--muted);font-size:14px}
+.brand a{color:var(--accent)}
+.btn{border:1px solid var(--line);background:var(--panel);border-radius:10px;padding:8px 12px;cursor:pointer;font-weight:700;font-size:15px;display:inline-flex;align-items:center;justify-content:center;gap:6px;min-height:40px}
+.btn:hover:not(:disabled){border-color:var(--accent)}
+.btn:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
+.btn.primary{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
+.btn.on{background:var(--accent-soft);border-color:var(--accent)}
+.btn:disabled{opacity:.45;cursor:default}
+.view{position:relative;border-radius:14px;overflow:hidden;border:1px solid var(--line);background:var(--scene);min-height:0}
+.view canvas{position:absolute;inset:0;width:100%;height:100%;display:block;touch-action:none}
+.status{position:absolute;left:12px;right:12px;top:12px;display:flex;justify-content:center;pointer-events:none}
+.status span{background:var(--panel);border:1px solid var(--line);border-radius:999px;padding:7px 16px;font-size:16px;font-weight:700;box-shadow:0 2px 8px rgba(0,0,0,.12);max-width:100%;text-align:center}
+.camtools{position:absolute;right:12px;top:60px;display:flex;flex-direction:column;gap:6px}
+.camtools .btn{width:40px;padding:0}
+.legend{position:absolute;left:12px;bottom:12px;display:flex;gap:8px;flex-wrap:wrap;font-size:13px;font-weight:700;pointer-events:none}
+.legend span{background:var(--panel);border:1px solid var(--line);border-radius:999px;padding:3px 10px;display:inline-flex;align-items:center;gap:6px}
+.legend i{width:12px;height:12px;border-radius:3px;display:inline-block}
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:14px;min-height:0;overflow:auto;padding:14px;display:flex;flex-direction:column;gap:14px}
+.panel h2{font-family:var(--display);font-size:13px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);margin:0;font-weight:500}
+.stepdots{display:grid;grid-template-columns:repeat(9,minmax(0,1fr));gap:4px}
+.stepdots button{border:1px solid var(--line);background:var(--chip);border-radius:8px;min-height:34px;font-weight:700;font-size:14px;cursor:pointer;padding:0}
+.stepdots button.done{background:var(--new-soft);border-color:var(--new-soft)}
+.stepdots button.on{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
+.steptitle{font-family:var(--display);font-size:21px;font-weight:700;margin:0;text-wrap:balance}
+.steptext{margin:0;font-size:16px}
+ol.do{margin:0;padding-left:22px;display:flex;flex-direction:column;gap:6px}
+ol.do li::marker{color:var(--accent);font-weight:700}
+.parts{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:4px}
+.parts li{display:grid;grid-template-columns:36px minmax(0,1fr);gap:6px;background:var(--new-soft);border-radius:8px;padding:6px 8px;font-size:15px}
+.parts li b{color:var(--new)}
+.row{display:flex;gap:6px;flex-wrap:wrap}
+.row .btn{flex:1 1 auto}
+.note{font-size:13px;color:var(--muted);margin:0}
+.toggles{display:flex;gap:6px;flex-wrap:wrap}
+.toggles .btn{min-height:36px;padding:5px 10px;font-size:14px}
+@media (max-width: 900px){
+  body{overflow:auto}
+  .app{height:auto;grid-template-columns:minmax(0,1fr);grid-template-rows:auto}
+  .view{height:60vh}
+  .status span{font-size:14px;border-radius:12px}
+}
+</style>
+</head>
+<body>
+<div class="app">
+  <header>
+    <div class="brand">
+      <h1>Catapult Build Lab</h1>
+      <p>Watch the V5 launcher go together one step at a time. Drag to turn it. Pairs with the <a href="catapult-assembly.html">written tutorial</a>.</p>
+    </div>
+    <div class="row">
+      <button class="btn" id="watch">▶ Watch it build</button>
+      <button class="btn" id="showAll">Show all</button>
+    </div>
+  </header>
+
+  <main class="view" id="view">
+    <canvas id="c" aria-label="3D model of the catapult launcher"></canvas>
+    <div class="status"><span id="status">Loading parts…</span></div>
+    <div class="camtools">
+      <button class="btn" id="zin" title="Zoom in" aria-label="Zoom in">+</button>
+      <button class="btn" id="zout" title="Zoom out" aria-label="Zoom out">−</button>
+      <button class="btn" id="home" title="Reset view" aria-label="Reset view">⌂</button>
+    </div>
+    <div class="legend"><span><i style="background:var(--new)"></i>New this step</span><span><i style="background:#f08a24"></i>You design + print</span></div>
+  </main>
+
+  <aside class="panel" aria-label="Build steps">
+    <div class="stepdots" id="dots"></div>
+    <div>
+      <h2 id="stepNum">Step 1 of 9</h2>
+      <p class="steptitle" id="stepTitle"></p>
+    </div>
+    <ol class="do" id="stepDo"></ol>
+    <section style="display:flex;flex-direction:column;gap:6px">
+      <h2>New parts this step</h2>
+      <ul class="parts" id="parts"></ul>
+    </section>
+    <div class="row">
+      <button class="btn" id="back">◀ Back</button>
+      <button class="btn primary" id="next">Next ▶</button>
+    </div>
+    <div class="row">
+      <button class="btn" id="again">↻ Show me again</button>
+      <button class="btn" id="say">🔊 Read to me</button>
+    </div>
+    <section style="display:flex;flex-direction:column;gap:6px">
+      <h2>View</h2>
+      <div class="toggles">
+        <button class="btn on" id="tLabels" aria-pressed="true">Labels</button>
+        <button class="btn" id="tGhost" aria-pressed="false">See-through metal</button>
+        <button class="btn" id="tBands" aria-pressed="false">Rubber bands</button>
+        <button class="btn" id="swing">↗ Swing the arm</button>
+      </div>
+      <p class="note">Drag to turn. Right-drag to slide. Scroll or pinch to zoom. Metal, screws, nuts, spacers, bearings and collars are the real VEX CAD shapes. Shafts are the VEX 1/8" pitch shafts. The cup and trigger are stand-ins for your own designs.</p>
+    </section>
+  </aside>
+</div>
+
+<script src="catapult-build-lab/parts.js"></script>
+<script type="importmap">
+{ "imports": {
+  "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+  "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
+} }
+</script>
+<script type="module">
+import * as THREE from 'three';
+import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
+
+const V = (x, y, z) => new THREE.Vector3(x, y, z);
+const $ = id => document.getElementById(id);
+
+// ---------- Scene ----------
+const canvas = $('c'), view = $('view');
+const renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
+renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+renderer.shadowMap.enabled = true;
+renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+renderer.toneMapping = THREE.ACESFilmicToneMapping;
+const scene = new THREE.Scene();
+scene.environment = new THREE.PMREMGenerator(renderer).fromScene(new RoomEnvironment(), 0.04).texture;
+const camera = new THREE.PerspectiveCamera(32, 1, 0.1, 400);
+const controls = new OrbitControls(camera, canvas);
+controls.enableDamping = true; controls.maxPolarAngle = Math.PI * 0.495; controls.minDistance = 3; controls.maxDistance = 70;
+scene.add(new THREE.HemisphereLight(0xffffff, 0x8a8f99, 0.55));
+const sun = new THREE.DirectionalLight(0xffffff, 1.5); sun.position.set(8, 20, 12); sun.castShadow = true;
+sun.shadow.mapSize.set(2048, 2048); Object.assign(sun.shadow.camera, { left: -14, right: 14, top: 14, bottom: -14, near: 1, far: 60 });
+sun.shadow.bias = -0.0004; sun.shadow.normalBias = 0.02; scene.add(sun);
+const fill = new THREE.DirectionalLight(0xffffff, 0.45); fill.position.set(-10, 8, -8); scene.add(fill);
+const floor = new THREE.Mesh(new THREE.PlaneGeometry(300, 300), new THREE.ShadowMaterial({ opacity: 0.15 }));
+floor.rotation.x = -Math.PI / 2; floor.receiveShadow = true; scene.add(floor);
+function applyTheme() { scene.background = new THREE.Color(getComputedStyle(document.documentElement).getPropertyValue('--scene').trim() || '#e3e7eb'); }
+applyTheme(); matchMedia('(prefers-color-scheme: dark)').addEventListener('change', applyTheme);
+
+// ---------- Real part meshes ----------
+function b64(s, T) { const bin = atob(s); const u = new Uint8Array(bin.length); for (let i = 0; i < bin.length; i++) u[i] = bin.charCodeAt(i); return new T(u.buffer); }
+const SMOOTH = { col: 1, spc: 1, sc12: 1, sc38: 1 };
+const GEO = {};
+function geo(key) {
+  if (GEO[key]) return GEO[key];
+  const d = window.VEX_PARTS[key];
+  const q = b64(d.p, Int16Array), idx = b64(d.i, d.w === 2 ? Uint16Array : Uint32Array);
+  const pos = new Float32Array(q.length);
+  for (let i = 0; i < q.length; i++) pos[i] = q[i] * d.s + d.c[i % 3];
+  let g = new THREE.BufferGeometry();
+  g.setAttribute('position', new THREE.BufferAttribute(pos, 3));
+  g.setIndex(new THREE.BufferAttribute(idx, 1));
+  if (!SMOOTH[key]) g = g.toNonIndexed();
+  g.computeVertexNormals();
+  return (GEO[key] = g);
+}
+const COLORS = { metal: 0xc9ced4, steel: 0x7d838b, dark: 0x2e3238, nylon: 0xf1f0ea, collar: 0x30343a, pla: 0xf08a24, ball: 0xfafafa };
+function mat(kind) {
+  const c = COLORS[kind];
+  const m = new THREE.MeshStandardMaterial({ color: c, metalness: kind === 'metal' || kind === 'steel' ? 0.55 : 0.05, roughness: kind === 'metal' ? 0.38 : 0.5 });
+  m.userData.base = c; return m;
+}
+const KIND = { uch: 'metal', c25: 'metal', c15: 'metal', s2: 'steel', s3: 'steel', s4: 'steel', brg: 'dark', col: 'collar', spc: 'nylon', sc12: 'steel', sc38: 'steel', nut: 'steel' };
+
+// cols = where the part file's x, y and z axes point in the build; t = where the part file's origin goes.
+function part(key, cols, t) {
+  const m = new THREE.Mesh(geo(key), mat(KIND[key]));
+  m.matrixAutoUpdate = false;
+  const [a, b, c] = cols;
+  m.matrix.set(a[0], b[0], c[0], t[0], a[1], b[1], c[1], t[1], a[2], b[2], c[2], t[2], 0, 0, 0, 1);
+  m.castShadow = true; m.receiveShadow = true;
+  return m;
+}
+const X = [1, 0, 0], Y = [0, 1, 0], Z = [0, 0, 1], nX = [-1, 0, 0], nY = [0, -1, 0], nZ = [0, 0, -1];
+
+// ---------- Layout (inches). x points to the front (band end), y up, z sideways. ----------
+const PX = 1.75, PY = 6.33;            // pivot: upright hole 11, front column
+const STOP = { A: 7.33, B: 7.83, C: 8.33 }; // back column (x = 1.25), holes 13, 14, 15
+const ARM_LOW = 0.248, BAR_R = 0.0625;
+const root = new THREE.Group(); scene.add(root);
+const armPivot = new THREE.Group(); armPivot.position.set(PX, PY, 0); root.add(armPivot);
+
+const ITEMS = [];   // { obj, step, from, name }
+function item(step, name, obj, from, parent = root) {
+  const g = new THREE.Group(); g.add(obj); parent.add(g);
+  ITEMS.push({ g, step, from: from || V(0, 3, 0), name, mats: [] });
+  obj.traverse(o => { if (o.isMesh) ITEMS[ITEMS.length - 1].mats.push(o.material); });
+  return g;
+}
+
+// Step 1: spine (U-channel, open side up)
+item(1, 'Spine', part('uch', [X, nY, nZ], [0, 1.080, -0.01]), V(0, 4, 0));
+// Step 2: cross members (open side down) under spine holes 1-2 and 19-20, with screws and nuts
+for (const cx of [-4.5, 4.5]) item(2, 'Cross member', part('uch', [Z, Y, nX], [cx - 0.01, 0.954, 0]), V(0, -0.1, cx > 0 ? 6 : -6));
+for (const [x, z] of [[-4.75, -0.25], [-4.25, 0.25], [4.25, -0.25], [4.75, 0.25]]) {
+  item(2, 'Screw 3/8"', part('sc38', [nY, X, Z], [x, 1.167, z]), V(0, 2.5, 0));
+  item(2, 'Nut', part('nut', [X, Y, Z], [x, 0.893, z]), V(0, -2, 0));
+}
+// Step 3: uprights on the outside of the spine walls over spine holes 13-14, spaced out 1/8"
+item(3, 'Upright', part('c15', [Y, X, nZ], [1.5, 2.33, 0.758]), V(0, 7, 2));
+item(3, 'Upright', part('c15', [Y, nX, Z], [1.5, 2.33, -0.758]), V(0, 7, -2));
+for (const s of [1, -1]) for (const x of [1.25, 1.75]) for (const y of [1.33, 1.83]) {
+  item(3, 'Spacer 1/8"', part('spc', [X, s > 0 ? Z : nZ, s > 0 ? nY : Y], [x, y, s * 0.6335]), V(0, 0, s * 2.2));
+  item(3, 'Screw 1/2"', part('sc12', s > 0 ? [nZ, Y, X] : [Z, Y, nX], [x, y, s * 0.845]), V(0, 0, s * 2.6));
+  item(3, 'Nut', part('nut', [X, s > 0 ? Z : nZ, s > 0 ? nY : Y], [x, y, s * 0.447]), V(0, 2.5, 0));
+}
+// Step 4: flat bearings on the outside of each upright, centered on hole 11
+item(4, 'Flat bearing', part('brg', [Z, Y, nX], [1.248, 5.292, -2.495]), V(0, 0, 2.5));
+item(4, 'Flat bearing', part('brg', [nZ, Y, X], [2.252, 5.292, 2.495]), V(0, 0, -2.5));
+for (const s of [1, -1]) for (const y of [PY - 0.5, PY + 0.5]) {
+  item(4, 'Screw 3/8"', part('sc38', s > 0 ? [nZ, Y, X] : [Z, Y, nX], [1.75, y, s * 0.97]), V(0, 0, s * 2.5));
+  item(4, 'Nut', part('nut', [X, s > 0 ? Z : nZ, s > 0 ? nY : Y], [1.75, y, s * 0.635]), V(0, 2.5, 0));
+}
+// Step 5: pivot shaft, arm (hole 6 from the short end), collars
+item(5, '4" shaft (pivot)', part('s4', [X, Y, Z], [PX, PY, -1.98]), V(0, 0, 5));
+for (const s of [1, -1]) item(5, 'Collar', part('col', [X, Y, Z], [PX, PY, s * 1.165]), V(0, 0, s * 2));
+item(5, 'Arm', part('c25', [nX, Z, Y], [-3.5, 0.24, 0]), V(0, 4, 0), armPivot);
+// Step 6: stop bar
+const stopG = new THREE.Group(); root.add(stopG);
+item(6, '3" shaft (stop bar)', part('s3', [X, Y, Z], [0, 0, -1.48]), V(0, 0, 4.5), stopG);
+for (const s of [1, -1]) item(6, 'Collar', part('col', [X, Y, Z], [0, 0, s * 0.888]), V(0, 0, s * 2), stopG);
+// Step 7: band peg (arm hole 2 from short end) and catch pin (hole 9 from long end)
+item(7, '2" shaft (band peg)', part('s2', [X, Y, Z], [2.0, 0, -0.98]), V(0, 0, 3.5), armPivot);
+item(7, '4" shaft (catch pin)', part('s4', [X, Y, Z], [-5.5, 0, -1.98]), V(0, 0, 5), armPivot);
+for (const s of [1, -1]) {
+  item(7, 'Collar', part('col', [X, Y, Z], [2.0, 0, s * 0.63]), V(0, 0, s * 2), armPivot);
+  item(7, 'Collar', part('col', [X, Y, Z], [-5.5, 0, s * 0.63]), V(0, 0, s * 2), armPivot);
+}
+
+// Step 9: stand-ins for the student-designed cup and trigger
+const pla = () => { const m = mat('pla'); m.transparent = true; m.opacity = 0.9; return m; };
+const CUP_X = -9.0;
+const cup = new THREE.Group();
+{
+  const prof = [[0, 0], [0.95, 0], [1.02, 0.08], [1.02, 0.6], [0.94, 0.6], [0.9, 0.14], [0, 0.14]].map(([x, y]) => new THREE.Vector2(x, y));
+  const m = new THREE.Mesh(new THREE.LatheGeometry(prof, 40), pla()); m.material.side = THREE.DoubleSide; m.position.set(CUP_X, 0.302 + 0.12, 0);
+  const base = new THREE.Mesh(new THREE.BoxGeometry(1.5, 0.12, 1.0), pla()); base.position.set(CUP_X, 0.302 + 0.06, 0);
+  const ball = new THREE.Mesh(new THREE.SphereGeometry(0.787, 32, 20), mat('ball')); ball.position.set(CUP_X, 0.302 + 0.26 + 0.787, 0);
+  [m, base, ball].forEach(o => { o.castShadow = true; cup.add(o); });
+}
+item(9, 'Ball cup (yours)', cup, V(0, 3, 0), armPivot);
+
+// Cocked angle: the bottom of the arm's flanges rests on the back end of the spine walls.
+const PHI_COCK = (() => { const dx = -5 - PX, dy = 2.034 - PY, r = Math.hypot(dx, dy); return Math.atan2(-dy, -dx) - Math.asin(ARM_LOW / r); })();
+const stopTheta = y => { const dy = y - PY, d = 0.5; return Math.atan2(d, dy) + Math.asin((ARM_LOW + BAR_R) / Math.hypot(d, dy)); };
+const PHI_STOP = -(Math.PI / 2 - stopTheta(STOP.B));
+stopG.position.set(1.25, STOP.B, 0);
+
+const trig = new THREE.Group();
+{
+  const p = V(-5.5, 0, 0).applyAxisAngle(V(0, 0, 1), PHI_COCK).add(V(PX, PY, 0));
+  const B = (sx, sy, sz, x, y, z) => { const m = new THREE.Mesh(new THREE.BoxGeometry(sx, sy, sz), pla()); m.position.set(x, y, z); m.castShadow = true; trig.add(m); };
+  B(1.0, 0.9, 0.35, p.x + 0.1, 1.6, 0.76);
+  B(0.45, p.y - 1.25, 0.4, p.x + 0.45, 1.1 + (p.y - 1.25) / 2, 1.3);
+  B(1.1, 0.22, 0.4, p.x - 0.1, p.y + 0.24, 1.3);
+  B(0.2, 0.32, 0.4, p.x - 0.55, p.y + 0.05, 1.3);
+}
+item(9, 'Trigger (yours)', trig, V(0, 0, 3));
+
+// Rubber bands (view option only; students don't model them)
+const bandG = new THREE.Group(); bandG.visible = false; root.add(bandG);
+const bandMat = new THREE.MeshStandardMaterial({ color: 0xc7432c, roughness: 0.75 });
+function updateBands() {
+  bandG.clear();
+  for (const z of [0.8, -0.8]) for (const k of [0.07, -0.07]) {
+    const a = armPivot.localToWorld(V(2.0, k, z)), b = V(4.5, 1.02 + k, z);
+    const m = new THREE.Mesh(new THREE.CylinderGeometry(0.035, 0.035, 1, 6), bandMat);
+    m.position.copy(a).add(b).multiplyScalar(0.5); m.quaternion.setFromUnitVectors(V(0, 1, 0), b.clone().sub(a).normalize()); m.scale.y = a.distanceTo(b);
+    bandG.add(m);
+  }
+}
+
+// ---------- Labels ----------
+const labelG = new THREE.Group(); scene.add(labelG);
+const LABEL_PX = () => (view.clientWidth < 600 ? 24 : 30);
+function sizeLabel(s) { const h = LABEL_PX() * 2 * Math.tan(THREE.MathUtils.degToRad(camera.fov / 2)) / Math.max(200, view.clientHeight); s.scale.set(h * s.userData.ar, h, 1); }
+function label(text, pos, parent) {
+  const c = document.createElement('canvas'), g = c.getContext('2d'), font = '700 40px Lexend, system-ui, sans-serif';
+  g.font = font; const w = Math.ceil(g.measureText(text).width) + 40; c.width = w; c.height = 68;
+  g.font = font; g.fillStyle = 'rgba(196,80,26,0.95)'; g.beginPath(); g.roundRect(0, 2, w, 64, 30); g.fill();
+  g.fillStyle = '#fff'; g.textBaseline = 'middle'; g.fillText(text, 20, 36);
+  const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace;
+  const s = new THREE.Sprite(new THREE.SpriteMaterial({ map: t, depthTest: false, transparent: true, sizeAttenuation: false }));
+  s.userData.ar = w / 68; sizeLabel(s); s.position.copy(pos); s.renderOrder = 10; (parent || labelG).add(s);
+  return s;
+}
+
+// ---------- Steps ----------
+const STEPS = [
+  { title: 'Spine', cam: [V(0, 1.2, 0), V(9, 8, 12)],
+    do: ['Start a new assembly in inches (IPS).', 'Insert the U-channel first, open side up. It is fixed in place.'],
+    parts: [[1, 'U-channel 2x2x2x20']],
+    labels: [['Spine · open side up', V(0, 2.8, 0)], ['Hole 1 (back)', V(-4.75, 1.6, 1.2)], ['Hole 20 (front)', V(4.75, 1.6, 1.2)]] },
+  { title: 'Front and back cross members', cam: [V(0, 0.8, 0), V(9, 8, 13)],
+    do: ['Put each cross member under the spine, open side down.', 'Back one under spine holes 1–2. Front one under spine holes 19–20.', '2 screws per joint in opposite corners. Nuts underneath.'],
+    parts: [[2, 'U-channel 2x2x2x20'], [4, 'Screw #8-32 × 3/8"'], [4, 'Hex nut']],
+    labels: [['Back: spine holes 1–2', V(-4.5, 2.4, 2.4)], ['Front: spine holes 19–20', V(4.5, 2.4, 2.4)]] },
+  { title: 'Uprights', cam: [V(1.2, 4.6, 0.3), V(10, 5.5, 16)],
+    do: ['One upright on the outside of each spine wall, flanges out, over spine holes 13–14.', 'The upright\'s bottom 2 rows of holes line up with the spine wall.', 'A 1/8" spacer on every screw, between the upright and the spine.', '4 screws (1/2") per upright, heads outside, nuts inside the spine.'],
+    parts: [[2, 'C-channel 1x2x1x15'], [8, '1/8" nylon spacer'], [8, 'Screw #8-32 × 1/2"'], [8, 'Hex nut']],
+    labels: [['Spine holes 13–14', V(1.5, 0.6, 2.2)], ['1/8" spacer gap', V(3.6, 1.6, 1.6)], ['Upright', V(1.5, 9.2, 1.4)]] },
+  { title: 'Flat bearings', cam: [V(1.75, 6.0, 0.8), V(5.5, 8, 9)],
+    do: ['One bearing on the outside of each upright, on the front column.', 'Its middle hole lines up with upright hole 11.', 'Screws through upright holes 10 and 12. Nuts inside.'],
+    parts: [[2, 'Flat bearing'], [4, 'Screw #8-32 × 3/8"'], [4, 'Hex nut']],
+    labels: [['Upright hole 11 (pivot)', V(3.6, 6.4, 1.3)], ['Holes 10 and 12', V(3.4, 5.4, 1.3)]] },
+  { title: 'Pivot shaft and arm', cam: [V(-0.3, 5, 0), V(8, 8, 20)],
+    do: ['Slide the 4" shaft through both bearings.', 'Put the arm between the uprights, open side down, short end to the front.', 'Arm hole 6 from the short end goes on the shaft.', 'A collar on each end of the shaft, against the bearings.'],
+    parts: [[1, '4" shaft (8x pitch file)'], [1, 'C-channel 1x2x1x25 (arm)'], [2, 'Shaft collar']],
+    labels: [['Short end → front', V(5.0, 7.3, 0.6)], ['Arm hole 6 on the shaft', V(0.6, 8.0, 1.5)]] },
+  { title: 'Stop bar', cam: [V(1.4, 7.2, 0.6), V(5.5, 9, 9)],
+    do: ['Slide the 3" shaft through the back column, hole 14, of both uprights.', 'A collar on each end.', 'Other stop holes: A = 13, B = 14, C = 15.'],
+    parts: [[1, '3" shaft (6x pitch file)'], [2, 'Shaft collar']],
+    labels: [['Stop bar · hole 14 (B)', V(-0.8, 8.4, 1.4)], ['Pivot · hole 11', V(3.6, 6.4, 1.4)]] },
+  { title: 'Band peg and catch pin', cam: [V(-1.5, 4.5, 0), V(8, 9, 15)],
+    do: ['Band peg: 2" shaft through arm hole 2 from the short end.', 'Catch pin: 4" shaft through arm hole 9 from the long end.', 'A collar on each side of the arm on both shafts.'],
+    parts: [[1, '2" shaft (4x pitch file)'], [1, '4" shaft (8x pitch file)'], [4, 'Shaft collar']],
+    armLabels: [['Band peg · hole 2', V(2.0, 1.1, 1.6)], ['Catch pin · hole 9 from long end', V(-5.5, -1.1, 2.4)]] },
+  { title: 'Test the swing', cam: [V(-0.5, 5, 0), V(4, 7, 20)], swing: true,
+    do: ['Press "Swing the arm" to see the arm hit the stop bar.', 'In SolidWorks: suppress the 30° angle mate, turn on Collision Detection in Move Component, and drag the arm.'],
+    parts: [], labels: [] },
+  { title: 'Your ball cup and trigger', cam: [V(-1.5, 4.5, 0), V(7, 9, 16)],
+    do: ['When your designs are done, add them here.', 'The cup bolts to the long end of the arm.', 'The trigger mounts to the spine and holds the catch pin.'],
+    parts: [[1, 'Ball cup (you design)'], [1, 'Trigger (you design)']],
+    labels: [['Your ball cup', V(-6.3, 4.4, 0.8)], ['Your trigger', V(-2.6, 4.8, 2.2)]] },
+];
+const N = STEPS.length;
+
+const state = { step: 1, labels: true, ghost: false, anim: [], watching: null, swing: null };
+const dots = $('dots');
+STEPS.forEach((s, i) => { const b = document.createElement('button'); b.textContent = i + 1; b.setAttribute('aria-label', `Step ${i + 1}: ${s.title}`); b.onclick = () => go(i + 1); dots.appendChild(b); });
+
+const NEW = new THREE.Color('#2b7de9');
+function tint(it, on) { it.mats.forEach(m => { if (!m.emissive || m.userData.base === COLORS.pla || m.userData.base === COLORS.ball) return; m.emissive.copy(on ? NEW : new THREE.Color(0)); m.emissiveIntensity = on ? 0.42 : 0; }); }
+function ghost(it, on) { it.mats.forEach(m => { const metal = m.userData.base === COLORS.metal; if (!metal) return; m.transparent = on; m.opacity = on ? 0.35 : 1; m.depthWrite = !on; }); }
+
+let camTween = null;
+function setCam(target, pos, instant) {
+  const k = Math.max(1, 1.25 / camera.aspect);
+  const p = target.clone().add(pos.clone().multiplyScalar(k));
+  if (instant) { controls.target.copy(target); camera.position.copy(p); camTween = null; return; }
+  camTween = { t: 0, fT: controls.target.clone(), fP: camera.position.clone(), tT: target.clone(), tP: p };
+}
+
+function go(n, opts = {}) {
+  state.step = Math.max(1, Math.min(N, n));
+  const s = STEPS[state.step - 1];
+  $('stepNum').textContent = `Step ${state.step} of ${N}`;
+  $('stepTitle').textContent = s.title;
+  $('stepDo').innerHTML = s.do.map(t => `<li>${t}</li>`).join('');
+  $('parts').innerHTML = s.parts.length ? s.parts.map(([q, n]) => `<li><b>${q}</b><span>${n}</span></li>`).join('') : '<li><b>–</b><span>No new parts</span></li>';
+  [...dots.children].forEach((b, i) => { b.classList.toggle('on', i + 1 === state.step); b.classList.toggle('done', i + 1 < state.step); });
+  $('back').disabled = state.step === 1; $('next').disabled = state.step === N;
+  $('status').textContent = s.parts.length ? `Step ${state.step}: add the blue parts` : `Step ${state.step}: ${s.title}`;
+  state.anim = [];
+  const showNew = !opts.all;
+  for (const it of ITEMS) {
+    const vis = opts.all ? it.step <= 9 : it.step <= state.step;
+    it.g.visible = vis;
+    const isNew = showNew && it.step === state.step;
+    tint(it, isNew);
+    it.g.position.set(0, 0, 0);
+    if (isNew && !opts.noFly) { it.g.position.copy(it.from); state.anim.push({ it, t: -Math.random() * 0.25 }); }
+  }
+  // arm pose: level while it is being placed, then cocked
+  armPivot.rotation.z = state.step >= 6 || opts.all ? PHI_COCK : 0;
+  state.swing = null;
+  labelG.clear();
+  armPivot.children.filter(c => c.isSprite).forEach(c => armPivot.remove(c));
+  if (state.labels && !opts.all) {
+    (s.labels || []).forEach(([t, p]) => label(t, p));
+    (s.armLabels || []).forEach(([t, p]) => label(t, p, armPivot));
+  }
+  $('swing').disabled = !(state.step >= 7 || opts.all);
+  updateBands();
+  if (!opts.keepCam) setCam(s.cam[0], s.cam[1]);
+}
+
+function showAll() {
+  stopWatch();
+  go(N, { all: true, noFly: true });
+  $('stepNum').textContent = 'Finished launcher'; $('stepTitle').textContent = 'All parts';
+  $('status').textContent = 'The finished launcher. Drag to look around.';
+  [...dots.children].forEach(b => { b.classList.remove('on'); b.classList.add('done'); });
+  setCam(V(-0.5, 4.5, 0), V(9, 8, 16));
+}
+
+function stopWatch() { if (state.watching) { clearTimeout(state.watching); state.watching = null; $('watch').textContent = '▶ Watch it build'; } }
+function watch() {
+  if (state.watching) { stopWatch(); return; }
+  $('watch').textContent = '■ Stop';
+  go(1);
+  const tick = () => { if (state.step >= N) { state.watching = null; $('watch').textContent = '▶ Watch it build'; return; } go(state.step + 1); if (STEPS[state.step - 1].swing) startSwing(); state.watching = setTimeout(tick, 3600); };
+  state.watching = setTimeout(tick, 3200);
+}
+
+function startSwing() { state.swing = { t: 0 }; }
+function updateSwing(dt) {
+  const w = state.swing; if (!w) return;
+  w.t += dt;
+  const up = 0.35, hold = 0.6, down = 1.2;
+  let phi;
+  if (w.t < up) { const u = w.t / up; phi = PHI_COCK + (PHI_STOP - PHI_COCK) * u * u; }
+  else if (w.t < up + hold) phi = PHI_STOP;
+  else if (w.t < up + hold + down) { const u = (w.t - up - hold) / down; const e = u * u * (3 - 2 * u); phi = PHI_STOP + (PHI_COCK - PHI_STOP) * e; }
+  else { phi = PHI_COCK; state.swing = null; }
+  armPivot.rotation.z = phi; updateBands();
+}
+
+function say() {
+  if (!('speechSynthesis' in window)) return;
+  speechSynthesis.cancel();
+  const s = STEPS[state.step - 1];
+  const parts = s.parts.map(([q, n]) => `${q} ${n.replace(/"/g, ' inch').replace('#8-32', 'number 8')}`).join(', ');
+  const text = `Step ${state.step}. ${s.title}. ${parts ? 'New parts: ' + parts + '. ' : ''}${s.do.join(' ').replace(/"/g, ' inch')}`;
+  speechSynthesis.speak(new SpeechSynthesisUtterance(text));
+}
+
+$('back').onclick = () => { stopWatch(); go(state.step - 1); };
+$('next').onclick = () => { stopWatch(); go(state.step + 1); if (STEPS[state.step - 1].swing) startSwing(); };
+$('again').onclick = () => { stopWatch(); go(state.step, { keepCam: true }); if (STEPS[state.step - 1].swing) startSwing(); };
+$('say').onclick = say;
+$('showAll').onclick = showAll;
+$('watch').onclick = watch;
+$('swing').onclick = () => { if (!state.swing) startSwing(); };
+$('tLabels').onclick = e => { state.labels = !state.labels; e.currentTarget.classList.toggle('on', state.labels); e.currentTarget.setAttribute('aria-pressed', state.labels); go(state.step, { keepCam: true, noFly: true }); };
+$('tGhost').onclick = e => { state.ghost = !state.ghost; e.currentTarget.classList.toggle('on', state.ghost); e.currentTarget.setAttribute('aria-pressed', state.ghost); ITEMS.forEach(it => ghost(it, state.ghost)); };
+$('tBands').onclick = e => { bandG.visible = !bandG.visible; e.currentTarget.classList.toggle('on', bandG.visible); e.currentTarget.setAttribute('aria-pressed', bandG.visible); };
+$('home').onclick = () => { const s = STEPS[state.step - 1]; setCam(s.cam[0], s.cam[1]); };
+$('zin').onclick = () => { camera.position.lerp(controls.target, 0.2); };
+$('zout').onclick = () => { camera.position.sub(controls.target).multiplyScalar(1.25).add(controls.target); };
+window.addEventListener('keydown', e => {
+  if (e.target.closest && e.target.closest('input,textarea')) return;
+  if (e.key === 'ArrowRight') $('next').click();
+  if (e.key === 'ArrowLeft') $('back').click();
+});
+
+// ---------- Loop ----------
+function resize() { const w = view.clientWidth, h = view.clientHeight; renderer.setSize(w, h, false); camera.aspect = w / Math.max(1, h); camera.updateProjectionMatrix(); scene.traverse(o => { if (o.isSprite && o.userData.ar) sizeLabel(o); }); }
+new ResizeObserver(resize).observe(view); resize();
+let last = performance.now();
+function frame(now) {
+  const dt = Math.min(0.05, (now - last) / 1000); last = now;
+  if (camTween) {
+    camTween.t = Math.min(1, camTween.t + dt / 0.9); const e = 1 - Math.pow(1 - camTween.t, 3);
+    controls.target.lerpVectors(camTween.fT, camTween.tT, e); camera.position.lerpVectors(camTween.fP, camTween.tP, e);
+    if (camTween.t >= 1) camTween = null;
+  }
+  for (const a of state.anim) {
+    a.t += dt; const u = Math.max(0, Math.min(1, a.t / 0.9)); const e = 1 - Math.pow(1 - u, 3);
+    a.it.g.position.copy(a.it.from).multiplyScalar(1 - e);
+  }
+  state.anim = state.anim.filter(a => a.t < 0.9);
+  updateSwing(dt);
+  controls.update();
+  renderer.render(scene, camera);
+  requestAnimationFrame(frame);
+}
+go(1);
+setCam(STEPS[0].cam[0], STEPS[0].cam[1], true);
+requestAnimationFrame(frame);
+window.__lab = { go, showAll, startSwing, state, camera, controls, renderer, scene, setCam, STEPS, armPivot, PHI_STOP, PHI_COCK };
+</script>
+</body>
+</html>
