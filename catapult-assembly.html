@@ -1,0 +1,363 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Catapult Launcher Assembly</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,800&family=Lexend:wght@400;500;700&display=swap">
+<style>
+/* Same look as the resource hub: orange accent, light and dark mode. One card per step: picture, then parts and mates. */
+:root{
+  --bg:#f8f6f3; --surface:#ffffff; --ink:#1d1a16; --muted:#5c564e; --line:#e2dcd4;
+  --accent:#c4501a; --accent-soft:#fbe8dd; --blue:#2f6fe0; --blue-soft:#e3ecfc;
+  --display:"Bricolage Grotesque","Arial Rounded MT Bold",system-ui,sans-serif;
+  --body:"Lexend","Verdana",system-ui,sans-serif;
+}
+@media (prefers-color-scheme: dark){:root{
+  --bg:#15120f; --surface:#1f1b17; --ink:#f3eee8; --muted:#b3aaa0; --line:#3a332c;
+  --accent:#ff9a5c; --accent-soft:#3a2518; --blue:#7fa8ff; --blue-soft:#1c2740; color-scheme:dark }}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--body);font-size:1.0625rem;line-height:1.6}
+.wrap{max-width:980px;margin:0 auto;padding-inline:16px;padding-block:28px 64px;display:grid;grid-template-columns:minmax(0,1fr);gap:26px}
+section,.card,.two>div{min-width:0}
+.card{align-content:start}
+li,p{overflow-wrap:anywhere}
+h1,h2,h3{font-family:var(--display);line-height:1.15;margin:0;text-wrap:balance}
+h1{font-size:clamp(2rem,6vw,2.7rem);font-weight:800}
+h2{font-size:1.5rem;font-weight:800}
+h3{font-size:1.15rem;font-weight:600}
+p{margin:0;max-width:70ch}
+a{color:var(--accent)}
+.eyebrow{font-size:.8rem;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);font-weight:700}
+header{display:grid;gap:10px}
+.lead{color:var(--muted)}
+.callout{display:grid;grid-template-columns:40px minmax(0,1fr);gap:12px;align-items:start;background:var(--accent-soft);border:3px solid var(--accent);border-radius:14px;padding:12px 14px}
+.callout .q{width:40px;height:40px;border-radius:50%;background:var(--accent);color:var(--surface);display:grid;place-items:center;font-family:var(--display);font-weight:800;font-size:1.4rem}
+.callout p+p{margin-top:6px}
+nav.jump{display:flex;flex-wrap:wrap;gap:6px}
+nav.jump a{font-size:.85rem;font-weight:500;text-decoration:none;color:var(--ink);border:2px solid var(--line);background:var(--surface);border-radius:999px;padding:3px 12px}
+nav.jump a:hover{border-color:var(--accent);color:var(--accent)}
+section{display:grid;gap:14px;scroll-margin-top:12px}
+.card{background:var(--surface);border:2px solid var(--line);border-radius:16px;padding:18px;display:grid;gap:14px}
+.card img{width:100%;height:auto;display:block;border-radius:10px;border:1px solid var(--line);background:#fff}
+.two{display:grid;grid-template-columns:minmax(0,1.35fr) minmax(0,1fr);gap:18px;align-items:start}
+@media (max-width:820px){.two{grid-template-columns:minmax(0,1fr)}}
+.stepnum{display:inline-block;font-family:var(--display);font-weight:800;color:var(--surface);background:var(--accent);border-radius:10px;padding:2px 12px;margin-right:8px}
+.parts{margin:0;padding:0;list-style:none;display:grid;gap:4px}
+.parts li{display:grid;grid-template-columns:44px minmax(0,1fr);gap:8px;padding:6px 0;border-bottom:1px solid var(--line);font-size:.98rem}
+.parts li:last-child{border-bottom:none}
+.parts .n{font-weight:700;color:var(--accent)}
+ol.do{margin:0;padding-left:1.3em;display:grid;gap:6px}
+ol.do li::marker{color:var(--accent);font-weight:700}
+.label{font-size:.78rem;letter-spacing:.1em;text-transform:uppercase;font-weight:700;color:var(--muted)}
+.skill{display:inline-block;font-size:.8rem;font-weight:700;padding:1px 9px;border-radius:999px;background:var(--blue-soft);color:var(--blue);white-space:nowrap}
+.tip{background:var(--blue-soft);border-radius:10px;padding:10px 12px;font-size:.95rem}
+.tip b{color:var(--blue)}
+.skills{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:14px}
+.skills .card{gap:8px}
+.skills h3 .skill{margin-right:6px}
+table{width:100%;border-collapse:collapse;font-size:.95rem}
+th,td{text-align:left;padding:7px 8px;border-bottom:1px solid var(--line);vertical-align:top}
+th{font-size:.78rem;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+td:first-child{font-weight:700;color:var(--accent);white-space:nowrap}
+.tablewrap{overflow-x:auto}
+.check li{list-style:none;margin-left:-1.3em}
+.check li::before{content:"☐ ";color:var(--accent)}
+footer{font-size:.9rem;color:var(--muted)}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header>
+  <span class="eyebrow">Catapult Unit · SolidWorks</span>
+  <h1>Assemble the Catapult Launcher</h1>
+  <p class="lead">Build the whole launcher in a SolidWorks assembly using the VEX Clawbot part files: metal, shafts, bearings, collars, spacers, screws and nuts. Leave out the rubber bands. In every picture, the parts you add in that step are <b style="color:var(--blue)">blue</b>.</p>
+</header>
+
+<div class="callout"><span class="q" aria-hidden="true">!</span><div>
+  <p><b>Before you start:</b> copy the catapult part files folder from Mr. Brown to your own folder. Open the parts from <i>your</i> copy, and keep the assembly in that same folder.</p>
+  <p><b>Stuck?</b> Tell Mr. Brown the step number and the mate you are trying, like "Step 3, I can't get the spacer to line up with the screw."</p>
+</div></div>
+
+<nav class="jump" aria-label="Jump to">
+  <a href="#parts">Parts</a><a href="#holes">Hole maps</a><a href="#skills">Mating skills</a>
+  <a href="#s1">1 Spine</a><a href="#s2">2 Cross members</a><a href="#s3">3 Uprights</a><a href="#s4">4 Bearings</a>
+  <a href="#s5">5 Pivot + arm</a><a href="#s6">6 Stop bar</a><a href="#s7">7 Peg + pin</a><a href="#s8">8 Test it</a><a href="#s9">9 Your parts</a><a href="#turnin">Turn in</a>
+</nav>
+
+<section>
+  <img src="catapult-assembly/step-final.jpg" alt="The finished launcher assembly with ball cup and trigger" style="width:100%;border-radius:14px;border:2px solid var(--line);background:#fff">
+</section>
+
+<section id="parts">
+  <h2>Parts list (one launcher)</h2>
+  <div class="card tablewrap">
+    <table>
+      <thead><tr><th>Qty</th><th>Part file</th><th>Where it goes</th></tr></thead>
+      <tbody>
+        <tr><td>3</td><td>U-channel 2x2x2x20</td><td>Spine, front cross member, back cross member</td></tr>
+        <tr><td>2</td><td>C-channel 1x2x1x15</td><td>Uprights</td></tr>
+        <tr><td>1</td><td>C-channel 1x2x1x25</td><td>Arm</td></tr>
+        <tr><td>2</td><td>4" shaft</td><td>Pivot, catch pin</td></tr>
+        <tr><td>1</td><td>3" shaft</td><td>Stop bar</td></tr>
+        <tr><td>1</td><td>2" shaft</td><td>Band peg</td></tr>
+        <tr><td>2</td><td>Flat bearing</td><td>Outside of each upright at the pivot</td></tr>
+        <tr><td>8</td><td>Rubber shaft collar</td><td>2 each on the pivot, stop bar, band peg and catch pin</td></tr>
+        <tr><td>8</td><td>1/8" nylon spacer</td><td>Between each upright and the spine, one on each upright screw</td></tr>
+        <tr><td>8</td><td>#8-32 x 1/2" screw</td><td>Uprights to spine, 4 per upright</td></tr>
+        <tr><td>8</td><td>#8-32 x 3/8" screw</td><td>Spine to cross members (4), flat bearings (4)</td></tr>
+        <tr><td>16</td><td>#8-32 hex nut</td><td>One on every screw</td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<section id="holes">
+  <h2>Hole maps</h2>
+  <p>Count holes starting at <b>1</b> from the end shown. Getting a hole wrong by one will make your launcher not match the real one, so count twice.</p>
+  <div class="card">
+    <h3>Spine (seen from the top)</h3>
+    <img src="catapult-assembly/map-spine.jpg" alt="Top view of the spine: holes 1 to 2 sit on the back cross member, holes 13 to 14 are where the uprights go, holes 19 to 20 sit on the front cross member">
+  </div>
+  <div class="card">
+    <h3>Upright (seen from the side)</h3>
+    <img src="catapult-assembly/map-upright.jpg" alt="Side view of an upright: hole 1 at the bottom, hole 11 in the front column is the pivot, holes 13, 14 and 15 in the back column are stop positions A, B and C">
+    <p>Each upright has two columns of holes. The <b>front column</b> is the one closer to the front cross member. The pivot goes in the front column. The stop bar goes in the <b>back column</b>.</p>
+  </div>
+  <div class="card">
+    <h3>Arm</h3>
+    <img src="catapult-assembly/map-arm.jpg" alt="The arm: band peg in hole 2 from the short end, pivot in hole 6 from the short end, catch pin in hole 9 from the long end">
+  </div>
+</section>
+
+<section id="skills">
+  <h2>Mating skills you will use</h2>
+  <p>Every step uses these four skills. The steps tell you which one by letter.</p>
+  <div class="skills">
+    <div class="card">
+      <h3><span class="skill">A</span>Line up two metal parts</h3>
+      <ol class="do">
+        <li><b>Coincident</b>: the two faces that touch.</li>
+        <li><b>Coincident</b>: one inside wall of a square hole in part 1 with the matching wall of the hole in part 2.</li>
+        <li><b>Coincident</b>: a wall at 90° to the first one, in the same pair of holes.</li>
+      </ol>
+      <p class="tip"><b>Tip:</b> hole walls are thin. Zoom in, or right-click and use <b>Select Other</b> to pick the wall instead of the flat face.</p>
+    </div>
+    <div class="card">
+      <h3><span class="skill">B</span>Center something in a square hole</h3>
+      <p>For round screws, square shafts, and anything else that does not match the hole's shape.</p>
+      <ol class="do">
+        <li><b>Advanced &gt; Width</b>. Width selections 1: two <b>opposite</b> walls of the hole. Width selections 2: the screw's round shank, or two opposite faces of the shaft. Constraint: <b>Centered</b>.</li>
+        <li>A second <b>Width</b> mate using the other two walls of the hole.</li>
+        <li><b>Coincident</b>: screw head underside on the metal face (screws only).</li>
+      </ol>
+      <p class="tip"><b>Tip:</b> right-click the metal part and use <b>Change Transparency</b> to see and click the screw shank inside the hole.</p>
+    </div>
+    <div class="card">
+      <h3><span class="skill">C</span>Put a nut or spacer on a screw</h3>
+      <ol class="do">
+        <li><b>Concentric</b>: the round hole of the nut or spacer with the screw's shank.</li>
+        <li><b>Coincident</b>: the nut or spacer face against the part it touches.</li>
+      </ol>
+    </div>
+    <div class="card">
+      <h3><span class="skill">D</span>Put a collar on a shaft</h3>
+      <ol class="do">
+        <li>Center the collar on the shaft with two <b>Width</b> mates, like skill B.</li>
+        <li><b>Coincident</b>: the collar's flat face against the bearing or metal it sits next to.</li>
+      </ol>
+    </div>
+  </div>
+  <p class="tip"><b>Save time:</b> once one screw has its mates and nut, select both and use <b>Insert &gt; Component &gt; Copy with Mates</b> to place the next one. You only pick the new hole walls.</p>
+</section>
+
+<section id="s1">
+  <h2><span class="stepnum">1</span>Spine</h2>
+  <div class="card two">
+    <img src="catapult-assembly/step-s1.jpg" alt="Step 1: the spine U-channel by itself">
+    <div style="display:grid;gap:12px">
+      <span class="label">Parts</span>
+      <ul class="parts"><li><span class="n">1</span>U-channel 2x2x2x20</li></ul>
+      <span class="label">Do</span>
+      <ol class="do">
+        <li>Start a new assembly. Set units to <b>IPS</b> (inch).</li>
+        <li>Insert the U-channel first, with the open side <b>up</b>. The first part is fixed, so it shows <b>(f)</b> in the tree.</li>
+        <li>Save now as <b>Catapult_Assembly_LastName_FirstName</b>, and save often.</li>
+      </ol>
+    </div>
+  </div>
+</section>
+
+<section id="s2">
+  <h2><span class="stepnum">2</span>Front and back cross members</h2>
+  <div class="card two">
+    <img src="catapult-assembly/step-s2.jpg" alt="Step 2: two U-channels across the ends of the spine">
+    <div style="display:grid;gap:12px">
+      <span class="label">Parts</span>
+      <ul class="parts">
+        <li><span class="n">2</span>U-channel 2x2x2x20</li>
+        <li><span class="n">4</span>#8-32 x 3/8" screw + 4 nuts</li>
+      </ul>
+      <span class="label">Do</span>
+      <ol class="do">
+        <li>Put each cross member <b>under</b> the spine, open side <b>down</b>, crossing at 90°. <span class="skill">A</span></li>
+        <li>Back cross member under spine holes <b>1–2</b>. Front cross member under spine holes <b>19–20</b>. The spine crosses each one at its middle (holes 10–11).</li>
+        <li>2 screws per joint, in <b>opposite corners</b> of the 2 × 2 overlap. Heads inside the spine, nuts inside the cross member. <span class="skill">B</span> <span class="skill">C</span></li>
+      </ol>
+    </div>
+  </div>
+</section>
+
+<section id="s3">
+  <h2><span class="stepnum">3</span>Uprights</h2>
+  <div class="card two">
+    <img src="catapult-assembly/step-s3.jpg" alt="Step 3: two upright C-channels bolted to the sides of the spine">
+    <div style="display:grid;gap:12px">
+      <span class="label">Parts</span>
+      <ul class="parts">
+        <li><span class="n">2</span>C-channel 1x2x1x15</li>
+        <li><span class="n">8</span>1/8" nylon spacer</li>
+        <li><span class="n">8</span>#8-32 x 1/2" screw + 8 nuts</li>
+      </ul>
+      <span class="label">Do</span>
+      <ol class="do">
+        <li>Put one upright on the <b>outside</b> of each spine wall, flanges pointing <b>out</b>, over spine holes <b>13–14</b>. Its bottom end lines up with the bottom of the spine, so its holes 1–2 match the spine wall's two rows.</li>
+        <li>Leave a <b>1/8" gap</b> for the spacers: use a <b>Distance</b> mate of 0.125 in between the upright and the spine wall, plus two hole-wall coincident mates. <span class="skill">A</span></li>
+        <li>4 screws per upright, heads on the outside. <span class="skill">B</span></li>
+        <li>A spacer on every screw between the upright and spine, then a nut inside the spine. <span class="skill">C</span></li>
+      </ol>
+    </div>
+  </div>
+  <div class="card"><img src="catapult-assembly/step-s3b.jpg" alt="Close-up of the upright bolted to the spine with four screws"></div>
+</section>
+
+<section id="s4">
+  <h2><span class="stepnum">4</span>Flat bearings</h2>
+  <div class="card two">
+    <img src="catapult-assembly/step-s4b.jpg" alt="Step 4: a flat bearing on the outside of the upright at the pivot hole">
+    <div style="display:grid;gap:12px">
+      <span class="label">Parts</span>
+      <ul class="parts">
+        <li><span class="n">2</span>Flat bearing</li>
+        <li><span class="n">4</span>#8-32 x 3/8" screw + 4 nuts</li>
+      </ul>
+      <span class="label">Do</span>
+      <ol class="do">
+        <li>One bearing on the <b>outside</b> of each upright, standing up and down along the <b>front column</b>.</li>
+        <li>Center the bearing's middle hole on upright <b>hole 11</b>. Use skill B with the bearing's round hole as Width selections 2. <span class="skill">B</span></li>
+        <li>Screws through the bearing's end holes into upright holes <b>10 and 12</b>, nuts inside. <span class="skill">B</span> <span class="skill">C</span></li>
+      </ol>
+    </div>
+  </div>
+</section>
+
+<section id="s5">
+  <h2><span class="stepnum">5</span>Pivot shaft and arm</h2>
+  <div class="card two">
+    <img src="catapult-assembly/step-s5.jpg" alt="Step 5: the arm on the pivot shaft between the uprights">
+    <div style="display:grid;gap:12px">
+      <span class="label">Parts</span>
+      <ul class="parts">
+        <li><span class="n">1</span>4" shaft (pivot)</li>
+        <li><span class="n">1</span>C-channel 1x2x1x25 (arm)</li>
+        <li><span class="n">2</span>Rubber shaft collar</li>
+      </ul>
+      <span class="label">Do</span>
+      <ol class="do">
+        <li>Slide the 4" shaft through both bearings and upright hole 11, sticking out the same amount on each side. <span class="skill">B</span></li>
+        <li>Put the arm between the uprights, open side <b>down</b>, <b>short end toward the front</b>. Arm <b>hole 6 from the short end</b> goes on the shaft. <span class="skill">B</span></li>
+        <li>Center the arm between the uprights: <b>Width</b> mate with the two inside upright faces and the two outside arm faces.</li>
+        <li>A collar on each end of the shaft, against the bearings. <span class="skill">D</span></li>
+        <li>Pose it: <b>Angle</b> mate of <b>30°</b> between the top of the arm and the top of the spine, so the long end rests down at the back.</li>
+      </ol>
+    </div>
+  </div>
+</section>
+
+<section id="s6">
+  <h2><span class="stepnum">6</span>Stop bar</h2>
+  <div class="card two">
+    <img src="catapult-assembly/step-s6b.jpg" alt="Step 6: the stop bar shaft through the back column of both uprights above the pivot">
+    <div style="display:grid;gap:12px">
+      <span class="label">Parts</span>
+      <ul class="parts">
+        <li><span class="n">1</span>3" shaft</li>
+        <li><span class="n">2</span>Rubber shaft collar</li>
+      </ul>
+      <span class="label">Do</span>
+      <ol class="do">
+        <li>Slide the 3" shaft through the <b>back column, hole 14</b> (stop B) of both uprights. <span class="skill">B</span></li>
+        <li>A collar on each end, against the outside of the uprights. <span class="skill">D</span></li>
+      </ol>
+      <p class="tip"><b>Stop holes:</b> A = hole 13, B = hole 14, C = hole 15. The arm hits this bar, and that sets the launch angle.</p>
+    </div>
+  </div>
+</section>
+
+<section id="s7">
+  <h2><span class="stepnum">7</span>Band peg and catch pin</h2>
+  <div class="card two">
+    <img src="catapult-assembly/step-s7.jpg" alt="Step 7: the band peg shaft at the short end of the arm and the catch pin shaft near the long end">
+    <div style="display:grid;gap:12px">
+      <span class="label">Parts</span>
+      <ul class="parts">
+        <li><span class="n">1</span>2" shaft (band peg)</li>
+        <li><span class="n">1</span>4" shaft (catch pin)</li>
+        <li><span class="n">4</span>Rubber shaft collar</li>
+      </ul>
+      <span class="label">Do</span>
+      <ol class="do">
+        <li>Band peg: 2" shaft through arm <b>hole 2 from the short end</b>, centered. <span class="skill">B</span></li>
+        <li>Catch pin: 4" shaft through arm <b>hole 9 from the long end</b>, centered. <span class="skill">B</span></li>
+        <li>A collar on each shaft on both sides of the arm, against the arm. <span class="skill">D</span></li>
+      </ol>
+      <p class="tip"><b>Real build:</b> the rubber bands loop from the band peg down around the front cross member. You don't model them.</p>
+    </div>
+  </div>
+</section>
+
+<section id="s8">
+  <h2><span class="stepnum">8</span>Test the motion</h2>
+  <div class="card">
+    <ol class="do">
+      <li>Right-click the 30° Angle mate and choose <b>Suppress</b>.</li>
+      <li>Click <b>Move Component</b>, turn on <b>Collision Detection</b> and check <b>Stop at collision</b>.</li>
+      <li>Drag the long end of the arm up. It should swing on the pivot and stop when it hits the stop bar. If the whole launcher moves or nothing turns, a mate is wrong. Check the Mates folder for errors.</li>
+      <li>Unsuppress the Angle mate when you're done.</li>
+    </ol>
+  </div>
+</section>
+
+<section id="s9">
+  <h2><span class="stepnum">9</span>Add your ball cup and trigger (later)</h2>
+  <div class="card two">
+    <img src="catapult-assembly/step-s8.jpg" alt="Step 9: printed ball cup on the long end of the arm and a trigger on the spine holding the catch pin">
+    <div style="display:grid;gap:12px">
+      <p>When your own <b>ball cup</b> and <b>trigger</b> parts are designed, insert them here with the same mating skills.</p>
+      <ul class="check do">
+        <li>The cup bolts to the long end of the arm and clears the uprights as it swings.</li>
+        <li>The trigger mounts to the spine and holds the catch pin with the arm at 30°.</li>
+        <li>Run the motion test again with your parts on.</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<section id="turnin">
+  <h2>Turn in</h2>
+  <div class="card">
+    <ol class="do">
+      <li>Check the tree: no red or yellow errors in the Mates folder, and only the spine shows <b>(f)</b>.</li>
+      <li><b>File &gt; Pack and Go</b>, check <b>Save to Zip file</b>, and name it <b>Catapult_Assembly_LastName_FirstName.zip</b>. This keeps all your part files with the assembly.</li>
+      <li>Turn in the zip file. <b>Files that don't use this exact name will not be graded.</b></li>
+    </ol>
+  </div>
+</section>
+
+<footer>Mr. Brown · Pre-Engineering · <a href="index.html">All class resources</a> · Pictures are a simplified model, so the real VEX parts look a little different.</footer>
+</div>
+</body>
+</html>
