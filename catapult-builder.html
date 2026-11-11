@@ -260,19 +260,35 @@ for (const it of L.ITEMS) {
   if (it.name === 'Arm') for (const d of [-1, -0.5, 0.5, 1]) off(d, 0, 'The arm is on the wrong hole. Arm hole 6 from the short end goes on the pivot.');
   if (it.name.startsWith('2" shaft')) for (const d of [-0.5, 0.5]) off(d, 0, 'The band peg goes in arm hole 2 from the short end.');
   if (it.name.includes('catch pin')) for (const d of [-0.5, 0.5]) off(d, 0, 'The catch pin goes in arm hole 9 from the long end.');
-  if (it.step === 6) {   // stop bar and its collars: holes 12–16 of the back column; 13, 14, 15 are A, B, C
+  if (it.name.includes('stop bar')) {   // holes 12–16 of the back column; 13, 14, 15 are A, B, C
     slot.options = [];
-    for (const [hole, k] of [[12, null], [13, 'A'], [14, 'B'], [15, 'C'], [16, null]]) {
-      const dy = (hole - 14) * 0.5;
-      slot.options.push({ c: c.clone().add(V(0, dy, 0)), R, ok: it.name.includes('stop bar') ? !!k : 'stop', hole, stop: k,
+    for (const [hole, k] of [[12, null], [13, 'A'], [14, 'B'], [15, 'C'], [16, null]])
+      slot.options.push({ c: c.clone().add(V(0, (hole - 14) * 0.5, 0)), R, ok: !!k, hole, stop: k,
         msg: 'The stop bar goes in hole 13, 14 or 15 of the back column (A, B or C).' });
-    }
-    if (it.name.includes('stop bar')) stopSlot = slot;
+    slot.base = 2; stopSlot = slot;
   }
+  slot.c0 = c; slot.R0 = R; slot.z = c.z; slot.x = c.x;
   slot.label = it.name === 'Collar' ? `Collar (${it.step === 5 ? 'pivot' : it.step === 6 ? 'stop bar' : 'arm'})` : it.name;
   SLOTS.push(slot);
 }
 SLOTS.forEach((s, i) => s.i = i);
+// Parts that ride on another part (screws, nuts, spacers, collars) move with it: if the student puts the
+// upright, bearing or shaft one hole off, these snap to that same spot, and the check makes them match.
+{
+  const find = (name, test) => SLOTS.find(p => p.name === name && test(p));
+  for (const s of SLOTS) {
+    let parent = null;
+    if (s.step === 3 && s.name !== 'Upright') parent = find('Upright', p => Math.sign(p.z) === Math.sign(s.z));
+    if (s.step === 4 && s.name !== 'Flat bearing') parent = find('Flat bearing', p => Math.sign(p.z) === Math.sign(s.z));
+    if (s.step === 6 && s !== stopSlot) parent = stopSlot;
+    if (s.step === 7 && s.name === 'Collar') parent = SLOTS.find(p => p.step === 7 && p.name !== 'Collar' && Math.abs(p.x - s.x) < 0.1);
+    if (!parent) continue;
+    const b = parent.options[parent.base || 0].c;
+    s.parent = parent;
+    s.options = parent.options.map((po, j) => ({ c: s.c0.clone().add(po.c.clone().sub(b)), R: s.R0, ok: 'follow', pj: j }));
+    s.base = parent.base || 0;
+  }
+}
 const TOTAL = {}; SLOTS.forEach(s => TOTAL[s.key] = (TOTAL[s.key] || 0) + 1);
 
 // ---------- Materials and meshes ----------
@@ -385,7 +401,12 @@ function drop() {
 }
 function candidates() {
   const out = [];
-  for (const s of SLOTS) if (s.key === state.hand.key && !s.filled) s.options.forEach((o, oi) => out.push({ s, oi, o }));
+  for (const s of SLOTS) if (s.key === state.hand.key && !s.filled) s.options.forEach((o, oi) => {
+    // once the part it rides on is placed, only offer the matching spot
+    if (s.parent && s.parent.filled && s.parent.filled.oi !== oi) return;
+    if (s.parent && !s.parent.filled && oi !== s.base) return;
+    out.push({ s, oi, o });
+  });
   return out;
 }
 function showDots() {
@@ -509,7 +530,7 @@ function check() {
     const o = s.options[s.filled.oi];
     let bad = null;
     if (o.ok === false) bad = o.msg;
-    else if (o.ok === 'stop' && o.hole !== stopHole) bad = stopHole ? `A stop bar collar is not on the stop bar's hole (${stopHole}).` : 'There is a stop bar collar with no stop bar.';
+    else if (o.ok === 'follow' && s.parent.filled && s.parent.filled.oi !== o.pj) bad = `${s.label} doesn't line up with the ${s.parent.label.toLowerCase()} it goes with.`;
     if (!bad && !facesRight(s.key, s.filled.q, o.R)) bad = `${s.label} is turned the wrong way. ${TURN_HINT[s.name] || 'Turn it with R, T or F.'}`;
     if (bad) { tintBad(s.filled.mesh, true); if (!issues.includes(bad)) issues.push(bad); }
   }
