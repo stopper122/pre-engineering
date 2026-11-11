@@ -70,11 +70,12 @@ for (const s of [1, -1]) for (const x of [1.25, 1.75]) for (const y of [1.33, 1.
   item(3, 'Nut', part('nut', [X, s > 0 ? Z : nZ, s > 0 ? nY : Y], [x, y, s * 0.447]), V(0, 2.5, 0));
 }
 // Step 4: flat bearings on the outside of each upright, centered on hole 11
-item(4, 'Flat bearing', part('brg', [Z, Y, nX], [1.248, 5.292, -2.495]), V(0, 0, 2.5));
-item(4, 'Flat bearing', part('brg', [nZ, Y, X], [2.252, 5.292, 2.495]), V(0, 0, -2.5));
+// The thin ridge on the bearing's back (part file +x) nests in the upright's square holes; the flat side faces out.
+item(4, 'Flat bearing', part('brg', [nZ, Y, X], [2.252, 5.292, 4.261]), V(0, 0, 2.5));
+item(4, 'Flat bearing', part('brg', [Z, Y, nX], [1.248, 5.292, -4.261]), V(0, 0, -2.5));
 for (const s of [1, -1]) for (const y of [PY - 0.5, PY + 0.5]) {
-  // The bearing is 0.277" thick at the screw holes, so these need 1/2" screws (head sits on the bearing face at 1.035).
-  item(4, 'Screw 1/2"', part('sc12', s > 0 ? [nZ, Y, X] : [Z, Y, nX], [1.75, y, s * 1.122]), V(0, 0, s * 2.5));
+  // Bearing (0.25") + upright web need 1/2" screws; the head sits on the bearing's flat face at 1.008.
+  item(4, 'Screw 1/2"', part('sc12', s > 0 ? [nZ, Y, X] : [Z, Y, nX], [1.75, y, s * 1.095]), V(0, 0, s * 2.5));
   item(4, 'Nut', part('nut', [X, s > 0 ? Z : nZ, s > 0 ? nY : Y], [1.75, y, s * 0.635]), V(0, 2.5, 0));
 }
 // Step 5: pivot shaft, arm (hole 6 from the short end), collars
