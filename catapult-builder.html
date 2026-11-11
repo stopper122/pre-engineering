@@ -178,7 +178,7 @@ ol.do li::marker{color:var(--accent);font-weight:700}
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
-import { createLauncher } from './catapult-build-lab/launcher.js?v=4';  // bump v= when launcher.js changes so browsers don't use an old copy
+import { createLauncher } from './catapult-build-lab/launcher.js?v=5';  // bump v= when launcher.js changes so browsers don't use an old copy
 
 const $ = id => document.getElementById(id);
 const V = (x, y, z) => new THREE.Vector3(x, y, z);
@@ -244,7 +244,7 @@ const TURN_HINT = {
   'Screw 1/2"': 'Screws go head on the outside.',
 };
 const SLOTS = [];
-let stopSlot = null;
+let stopSlot = null, pegSlot = null;
 for (const it of L.ITEMS) {
   if (it.step > 7) continue;
   const mesh = it.g.children[0];
@@ -258,7 +258,7 @@ for (const it of L.ITEMS) {
   if (it.name === 'Upright') for (const d of [-0.5, 0.5]) off(d, 0, `The ${sideOf(c.z)} upright is one hole off. It goes over spine holes 13–14.`);
   if (it.name === 'Flat bearing') for (const d of [-0.5, 0.5]) off(0, d, `The ${sideOf(c.z)} bearing is one hole off. Center it on upright hole 11 (front column).`);
   if (it.name === 'Arm') for (const d of [-1, -0.5, 0.5, 1]) off(d, 0, 'The arm is on the wrong hole. Arm hole 6 from the short end goes on the pivot.');
-  if (it.name.startsWith('2" shaft')) for (const d of [-0.5, 0.5]) off(d, 0, 'The band peg goes in arm hole 2 from the short end.');
+  if (it.name.startsWith('2" shaft')) for (const d of [-0.5, 0.5]) off(d, 0, 'The band peg goes in arm hole 1, 2 or 3 from the short end.');
   if (it.name.includes('catch pin')) for (const d of [-0.5, 0.5]) off(d, 0, 'The catch pin goes in arm hole 9 from the long end.');
   if (it.name.includes('stop bar')) {   // holes 12–16 of the back column; 13, 14, 15 are A, B, C
     slot.options = [];
@@ -283,10 +283,13 @@ SLOTS.forEach((s, i) => s.i = i);
     if (s.step === 6 && s !== stopSlot) parent = stopSlot;
     if (s.step === 7 && s.name === 'Collar') parent = SLOTS.find(p => p.step === 7 && p.name !== 'Collar' && Math.abs(p.x - s.x) < 0.1);
     if (s.step === 7 && s.name !== 'Collar') {   // band peg and catch pin ride on the arm, wherever the arm is
-      const arm = SLOTS.find(p => p.name === 'Arm'), ab = arm.options[0].c, msg = s.options[1].msg;
+      const arm = SLOTS.find(p => p.name === 'Arm'), ab = arm.options[0].c, msg = s.options[1].msg, isPeg = s.name.startsWith('2" shaft');
+      if (isPeg) pegSlot = s;
       s.parent = arm; s.base = 0;
       s.options = arm.options.flatMap((ao, j) => [0, -0.5, 0.5].map(d => ({
-        c: s.c0.clone().add(ao.c.clone().sub(ab)).add(V(d, 0, 0)), R: s.R0, ok: d === 0 ? 'follow' : false, pj: j, msg })));
+        c: s.c0.clone().add(ao.c.clone().sub(ab)).add(V(d, 0, 0)), R: s.R0, pj: j, msg,
+        // the band peg may go in arm hole 1, 2 or 3 from the short end; that choice is a launch variable
+        ok: isPeg || d === 0 ? 'follow' : false, peg: isPeg ? 2 - d * 2 : undefined })));
       continue;
     }
     if (!parent) continue;
@@ -549,10 +552,11 @@ function check() {
   for (const [k, n] of Object.entries(missing)) issues.push(`Still missing: ${n} × ${NAMES[k]}.`);
   const ul = $('issues'); ul.innerHTML = '';
   if (!issues.length) {
-    const code = `V5C-${stop}-${hash('catapult|' + stop)}`;
-    store.set(BUILD_KEY, { v: 1, stop, code, at: Date.now() });
+    const peg = pegSlot.options[pegSlot.filled.oi].peg;
+    const code = `V5C-${stop}${peg}-${hash('catapult|' + stop + peg)}`;
+    store.set(BUILD_KEY, { v: 2, stop, peg, code, at: Date.now() });
     $('code').textContent = code; $('doneBox').hidden = false;
-    ul.innerHTML = `<li class="good">Everything is in the right place. Stop bar in hole ${stopHole} (${stop}).</li>`;
+    ul.innerHTML = `<li class="good">Everything is in the right place. Stop bar in hole ${stopHole} (${stop}), band peg in arm hole ${peg}.</li>`;
     status('Your launcher passes the check!', 'good');
   } else {
     issues.slice(0, 8).forEach(t => { const li = document.createElement('li'); li.textContent = t; ul.appendChild(li); });

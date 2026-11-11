@@ -87,10 +87,10 @@ const stopG = new THREE.Group(); root.add(stopG);
 item(6, '3" shaft (stop bar)', part('s3', [X, Y, Z], [0, 0, -1.48]), V(0, 0, 4.5), stopG);
 for (const s of [1, -1]) item(6, 'Collar', part('col', [X, Y, Z], [0, 0, s * 0.888]), V(0, 0, s * 2), stopG);
 // Step 7: band peg (arm hole 2 from short end) and catch pin (hole 9 from long end)
-item(7, '2" shaft (band peg)', part('s2', [X, Y, Z], [2.0, 0, -0.98]), V(0, 0, 3.5), armPivot);
+const pegG = [item(7, '2" shaft (band peg)', part('s2', [X, Y, Z], [2.0, 0, -0.98]), V(0, 0, 3.5), armPivot)];
 item(7, '4" shaft (catch pin)', part('s4', [X, Y, Z], [-5.5, 0, -1.98]), V(0, 0, 5), armPivot);
 for (const s of [1, -1]) {
-  item(7, 'Collar', part('col', [X, Y, Z], [2.0, 0, s * 0.63]), V(0, 0, s * 2), armPivot);
+  pegG.push(item(7, 'Collar', part('col', [X, Y, Z], [2.0, 0, s * 0.63]), V(0, 0, s * 2), armPivot));
   item(7, 'Collar', part('col', [X, Y, Z], [-5.5, 0, s * 0.63]), V(0, 0, s * 2), armPivot);
 }
 
@@ -129,10 +129,13 @@ item(9, 'Trigger (yours)', trig, V(0, 0, 3));
 // Rubber bands (view option only; students don't model them)
 const bandG = new THREE.Group(); bandG.visible = false; root.add(bandG);
 const bandMat = new THREE.MeshStandardMaterial({ color: 0xc7432c, roughness: 0.75 });
+let pegShift = 0;
+// Band peg in arm hole 1, 2 or 3 from the short end (2 is the default build). Hole 1 is farthest from the pivot.
+function setPeg(hole) { pegShift = (2 - hole) * 0.5; pegG.forEach(g => { g.position.x = pegShift; }); updateBands(); }
 function updateBands() {
   bandG.clear();
   for (const z of [0.8, -0.8]) for (const k of [0.07, -0.07]) {
-    const a = armPivot.localToWorld(V(2.0, k, z)), b = V(4.5, 1.02 + k, z);
+    const a = armPivot.localToWorld(V(2.0 + pegShift, k, z)), b = V(4.5, 1.02 + k, z);
     const m = new THREE.Mesh(new THREE.CylinderGeometry(0.035, 0.035, 1, 6), bandMat);
     m.position.copy(a).add(b).multiplyScalar(0.5); m.quaternion.setFromUnitVectors(V(0, 1, 0), b.clone().sub(a).normalize()); m.scale.y = a.distanceTo(b);
     bandG.add(m);
@@ -142,5 +145,5 @@ function updateBands() {
 
 // Move the stop bar to hole A, B or C and return the arm angle where it stops.
 function setStop(k) { stopG.position.set(1.25, STOP[k], 0); return -(Math.PI / 2 - stopTheta(STOP[k])); }
-return { geo, KIND, setStop, ball, BALL_R, BALL_LOCAL, trig, V, root, armPivot, stopG, ITEMS, COLORS, mat, part, PX, PY, STOP, ARM_LOW, BAR_R, PHI_COCK, PHI_STOP, stopTheta, CUP_X, cup, bandG, updateBands };
+return { setPeg, geo, KIND, setStop, ball, BALL_R, BALL_LOCAL, trig, V, root, armPivot, stopG, ITEMS, COLORS, mat, part, PX, PY, STOP, ARM_LOW, BAR_R, PHI_COCK, PHI_STOP, stopTheta, CUP_X, cup, bandG, updateBands };
 }

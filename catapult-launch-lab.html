@@ -126,9 +126,10 @@ th{font-size:12px;color:var(--muted);font-weight:700;text-transform:uppercase;le
     <section class="card" id="buildCard">
       <h2 style="margin:0">Your build</h2>
       <div id="buildOk" class="msg good" hidden></div>
+      <button class="btn" id="bchange" hidden style="min-height:32px;font-size:13px;padding:3px 10px;align-self:flex-start">Use a different build code</button>
       <div id="buildNeed">
         <p style="margin:0 0 8px">Build your launcher in the <a href="catapult-builder.html" style="color:var(--accent)">Catapult Builder</a> first. When it passes the check, it shows up here.</p>
-        <div class="field"><label for="bcode">Or type your build code</label><input id="bcode" placeholder="V5C-B-XXXX" style="width:140px;text-align:left" autocomplete="off"></div>
+        <div class="field"><label for="bcode">Or type your build code</label><input id="bcode" placeholder="V5C-B2-XXXX" style="width:140px;text-align:left" autocomplete="off"></div>
         <button class="btn" id="bload">Load build</button>
         <div id="bmsg" class="msg bad" hidden style="margin-top:8px"></div>
       </div>
@@ -139,9 +140,11 @@ th{font-size:12px;color:var(--muted);font-weight:700;text-transform:uppercase;le
       <div class="field"><label for="kit">Launcher number</label><input id="kit" type="number" min="1" max="30" value="1" inputmode="numeric"></div>
       <div class="field"><label>Stop bar hole</label>
         <div class="seg" id="stop"><button data-v="A">A·13</button><button data-v="B" class="on">B·14</button><button data-v="C">C·15</button></div></div>
+      <div class="field"><label>Band peg (arm hole)</label>
+        <div class="seg" id="peg"><button data-v="1">1</button><button data-v="2" class="on">2</button><button data-v="3">3</button></div></div>
       <div class="field"><label>Rubber bands</label>
         <div class="seg" id="bands"><button data-v="1">1</button><button data-v="2" class="on">2</button><button data-v="3">3</button><button data-v="4">4</button></div></div>
-      <p class="note">Each launcher number shoots a little differently, like real kits. Use the number Mr. Brown gives you.</p>
+      <p class="note">Each launcher number shoots a little differently, like real kits. Use the number Mr. Brown gives you. Band peg hole is counted from the short end of the arm; hole 1 is farthest from the pivot.</p>
     </section>
 
     <div class="tabs" role="tablist">
@@ -179,7 +182,7 @@ th{font-size:12px;color:var(--muted);font-weight:700;text-transform:uppercase;le
 
     <section>
       <h2>Launch log</h2>
-      <table><thead><tr><th>#</th><th>Test</th><th>Stop</th><th>Bands</th><th>Result</th></tr></thead><tbody id="log"></tbody></table>
+      <table><thead><tr><th>#</th><th>Test</th><th>Stop</th><th>Peg</th><th>Bands</th><th>Result</th></tr></thead><tbody id="log"></tbody></table>
       <p class="note" style="margin-top:6px">No air drag, gravity is 9.8 m/s². Distances are measured along the floor from the release point.</p>
     </section>
   </aside>
@@ -196,7 +199,7 @@ th{font-size:12px;color:var(--muted);font-weight:700;text-transform:uppercase;le
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
-import { createLauncher } from './catapult-build-lab/launcher.js?v=4';  // bump v= when launcher.js changes so browsers don't use an old copy
+import { createLauncher } from './catapult-build-lab/launcher.js?v=5';  // bump v= when launcher.js changes so browsers don't use an old copy
 
 const $ = id => document.getElementById(id);
 const V = (x, y, z) => new THREE.Vector3(x, y, z);
@@ -321,10 +324,12 @@ dots.count = 0; dots.frustumCulled = false; scene.add(dots);
 // ---------- Launch physics ----------
 const STOP_FACTOR = { A: 0.93, B: 1.0, C: 1.05 };  // more arm swing → a bit more band energy
 function hash(n) { let x = Math.imul(n ^ 0x9e3779b9, 0x85ebca6b); x ^= x >>> 13; x = Math.imul(x, 0xc2b2ae35); x ^= x >>> 16; return (x >>> 0) / 4294967296; }
-const setup = { stop: 'B', bands: 2, kit: 1 };
+const setup = { stop: 'B', bands: 2, kit: 1, peg: 2 };
+// Band peg farther from the pivot stretches the bands more: arm hole 1 (2.5"), 2 (2.0"), 3 (1.5").
+const PEG_FACTOR = { 1: 1.12, 2: 1.0, 3: 0.86 };
 function kitFactor() { return 0.9 + 0.2 * hash(setup.kit * 7919 + 13); }
 function launchSpeed() {   // m/s, before the small shot-to-shot wobble
-  return 5.2 * Math.sqrt(setup.bands / 2) * STOP_FACTOR[setup.stop] * kitFactor();
+  return 5.2 * Math.sqrt(setup.bands / 2) * STOP_FACTOR[setup.stop] * PEG_FACTOR[setup.peg] * kitFactor();
 }
 let phiStop = L.setStop('B');
 
@@ -429,14 +434,15 @@ function segment(id, fn) {
 }
 function markSeg(id, v) { $(id).querySelectorAll('button').forEach(x => x.classList.toggle('on', x.dataset.v === String(v))); }
 const lab = { testedKey: null, trial: 0 };
-const setupKey = () => `${setup.kit}|${setup.stop}|${setup.bands}`;
+const setupKey = () => `${setup.kit}|${setup.stop}|${setup.bands}|${setup.peg}`;
 function changed() {
-  phiStop = L.setStop(setup.stop);
+  phiStop = L.setStop(setup.stop); L.setPeg(setup.peg);
   play.sim = null; setPlaying(false); dots.count = 0; bin.visible = false; hitMark.visible = false;
   $('scrub').max = 0; showTime(0); placeScene(); updateCupCard();
 }
 segment('stop', b => { setup.stop = b.dataset.v; changed(); });
 segment('bands', b => { setup.bands = +b.dataset.v; changed(); });
+segment('peg', b => { setup.peg = +b.dataset.v; changed(); });
 $('kit').onchange = () => { setup.kit = Math.max(1, Math.min(30, Math.round(+$('kit').value || 1))); $('kit').value = setup.kit; changed(); };
 $('wallD').onchange = () => { const d = Math.max(0.5, Math.min(5, +$('wallD').value || 2)); $('wallD').value = d.toFixed(2); lab.testedKey = null; changed(); };
 
@@ -476,7 +482,7 @@ function updateCupCard() {
 function addLog(test, result, cls) {
   lab.trial++;
   const tr = document.createElement('tr');
-  tr.innerHTML = `<td>${lab.trial}</td><td>${test}</td><td>${setup.stop}</td><td>${setup.bands}</td><td style="font-weight:700;color:${cls ? `var(--${cls})` : 'inherit'}">${result}</td>`;
+  tr.innerHTML = `<td>${lab.trial}</td><td>${test}</td><td>${setup.stop}</td><td>${setup.peg}</td><td>${setup.bands}</td><td style="font-weight:700;color:${cls ? `var(--${cls})` : 'inherit'}">${result}</td>`;
   $('log').prepend(tr);
 }
 
@@ -514,10 +520,12 @@ $('launchCup').onclick = () => {
     if (setup.bands < 4) opts.push(['bands', setup.bands + 1]);
     if (setup.bands > 1) opts.push(['bands', setup.bands - 1]);
     for (const k of ['A', 'B', 'C']) if (k !== setup.stop) opts.push(['stop', k]);
+    for (const k of [1, 2, 3]) if (k !== setup.peg) opts.push(['peg', k]);
     const [key, val] = opts[Math.floor(Math.random() * opts.length)];
-    const before = key === 'bands' ? `${setup.bands} bands` : `stop hole ${setup.stop}`;
-    setup[key] = val; markSeg(key === 'bands' ? 'bands' : 'stop', val);
-    const after = key === 'bands' ? `${val} band${val > 1 ? 's' : ''}` : `stop hole ${val}`;
+    const say = (k, v) => k === 'bands' ? `${v} band${v > 1 ? 's' : ''}` : k === 'stop' ? `stop hole ${v}` : `band peg in arm hole ${v}`;
+    const before = say(key, setup[key]);
+    setup[key] = val; markSeg(key, val);
+    const after = say(key, val);
     text = `${where}. Mr. Brown changed one thing: ${before} → ${after}. Do a new wall test and try again.`; cls = 'bad';
   }
   m.className = 'msg ' + cls; m.textContent = text;
@@ -582,13 +590,16 @@ function frame(now) {
 // ?build=0 lets a teacher demo the lab without a build.
 let build = null;
 function codeHash(s) { let h = 2166136261; for (const c of s) { h ^= c.charCodeAt(0); h = Math.imul(h, 16777619); } return (h >>> 0).toString(36).toUpperCase().slice(-4).padStart(4, '0'); }
-function readCode(code) { const m = /^V5C-([ABC])-([0-9A-Z]{4})$/.exec((code || '').trim().toUpperCase()); return m && codeHash('catapult|' + m[1]) === m[2] ? { stop: m[1], code: m[0] } : null; }
+function readCode(code) {   // V5C-<stop><peg>-<check>, or the older V5C-<stop>-<check> (peg in hole 2)
+  const m = /^V5C-([ABC])([123]?)-([0-9A-Z]{4})$/.exec((code || '').trim().toUpperCase());
+  return m && codeHash('catapult|' + m[1] + m[2]) === m[3] ? { stop: m[1], peg: +(m[2] || 2), code: m[0] } : null;
+}
 function useBuild(b) {
   build = b;
-  $('buildNeed').hidden = !!b; $('buildOk').hidden = !b;
+  $('buildNeed').hidden = !!b; $('buildOk').hidden = !b; $('bchange').hidden = !b || !!b.demo;
   if (b) {
-    $('buildOk').textContent = b.demo ? 'Demo launcher (no build needed).' : `Your build is loaded ✓ Stop bar in hole ${b.stop}. Code ${b.code}`;
-    setup.stop = b.stop; markSeg('stop', b.stop);
+    $('buildOk').textContent = b.demo ? 'Demo launcher (no build needed).' : `Your build is loaded ✓ Stop bar ${b.stop}, band peg in arm hole ${b.peg}. Code ${b.code}`;
+    setup.stop = b.stop; markSeg('stop', b.stop); setup.peg = b.peg || 2; markSeg('peg', setup.peg);
   }
   $('launchWall').disabled = !b; changed();
 }
@@ -597,10 +608,11 @@ $('bload').onclick = () => {
   if (b) { try { localStorage.setItem('v5CatapultBuild', JSON.stringify({ v: 1, ...b, at: Date.now() })); } catch {} useBuild(b); $('bmsg').hidden = true; }
   else { $('bmsg').hidden = false; $('bmsg').textContent = 'That code does not match. Check it, or finish your build in the Catapult Builder.'; }
 };
+$('bchange').onclick = () => { $('buildNeed').hidden = false; $('bcode').focus(); };
 $('bcode').onkeydown = e => { if (e.key === 'Enter') $('bload').click(); };
 {
   let saved = null; try { saved = JSON.parse(localStorage.getItem('v5CatapultBuild')); } catch {}
-  if (Q.get('build') === '0') useBuild({ stop: 'B', demo: true });
+  if (Q.get('build') === '0') useBuild({ stop: 'B', peg: 2, demo: true });
   else useBuild(saved && readCode(saved.code) ? readCode(saved.code) : null);
 }
 changed(); setMode('wall'); camPreset('side');
