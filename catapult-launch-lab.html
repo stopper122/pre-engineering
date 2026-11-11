@@ -185,7 +185,7 @@ th{font-size:12px;color:var(--muted);font-weight:700;text-transform:uppercase;le
   </aside>
 </div>
 
-<script src="catapult-build-lab/parts.js"></script>
+<script src="catapult-build-lab/parts.js?v=4"></script>
 <script type="importmap">
 { "imports": {
   "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
@@ -196,7 +196,7 @@ th{font-size:12px;color:var(--muted);font-weight:700;text-transform:uppercase;le
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
-import { createLauncher } from './catapult-build-lab/launcher.js';
+import { createLauncher } from './catapult-build-lab/launcher.js?v=4';  // bump v= when launcher.js changes so browsers don't use an old copy
 
 const $ = id => document.getElementById(id);
 const V = (x, y, z) => new THREE.Vector3(x, y, z);

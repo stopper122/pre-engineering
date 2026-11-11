@@ -167,7 +167,7 @@ ol.do li::marker{color:var(--accent);font-weight:700}
   </aside>
 </div>
 
-<script src="catapult-build-lab/parts.js"></script>
+<script src="catapult-build-lab/parts.js?v=4"></script>
 <script type="importmap">
 { "imports": {
   "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
@@ -178,7 +178,7 @@ ol.do li::marker{color:var(--accent);font-weight:700}
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
-import { createLauncher } from './catapult-build-lab/launcher.js';
+import { createLauncher } from './catapult-build-lab/launcher.js?v=4';  // bump v= when launcher.js changes so browsers don't use an old copy
 
 const $ = id => document.getElementById(id);
 const V = (x, y, z) => new THREE.Vector3(x, y, z);
@@ -282,6 +282,13 @@ SLOTS.forEach((s, i) => s.i = i);
     if (s.step === 4 && s.name !== 'Flat bearing') parent = find('Flat bearing', p => Math.sign(p.z) === Math.sign(s.z));
     if (s.step === 6 && s !== stopSlot) parent = stopSlot;
     if (s.step === 7 && s.name === 'Collar') parent = SLOTS.find(p => p.step === 7 && p.name !== 'Collar' && Math.abs(p.x - s.x) < 0.1);
+    if (s.step === 7 && s.name !== 'Collar') {   // band peg and catch pin ride on the arm, wherever the arm is
+      const arm = SLOTS.find(p => p.name === 'Arm'), ab = arm.options[0].c, msg = s.options[1].msg;
+      s.parent = arm; s.base = 0;
+      s.options = arm.options.flatMap((ao, j) => [0, -0.5, 0.5].map(d => ({
+        c: s.c0.clone().add(ao.c.clone().sub(ab)).add(V(d, 0, 0)), R: s.R0, ok: d === 0 ? 'follow' : false, pj: j, msg })));
+      continue;
+    }
     if (!parent) continue;
     const b = parent.options[parent.base || 0].c;
     s.parent = parent;
@@ -399,12 +406,17 @@ function drop() {
   state.hand = null; handMesh.visible = false; $('handBar').hidden = true; dotG.clear(); renderLib();
   status('Pick the next part from the library.');
 }
+// The option a part is in, or where it should go given the parts it rides on.
+function expectedOi(slot) {
+  if (slot.filled) return slot.filled.oi;
+  if (slot.parent) { const w = expectedOi(slot.parent); const i = slot.options.findIndex(o => o.pj === w && o.ok !== false); return i < 0 ? 0 : i; }
+  return slot.base || 0;
+}
 function candidates() {
   const out = [];
   for (const s of SLOTS) if (s.key === state.hand.key && !s.filled) s.options.forEach((o, oi) => {
     // once the part it rides on is placed, only offer the matching spot
-    if (s.parent && s.parent.filled && s.parent.filled.oi !== oi) return;
-    if (s.parent && !s.parent.filled && oi !== s.base) return;
+    if (s.parent && o.pj !== expectedOi(s.parent)) return;
     out.push({ s, oi, o });
   });
   return out;
