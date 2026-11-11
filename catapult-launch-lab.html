@@ -1,0 +1,575 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Catapult Launch Lab</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:wght@400;700&family=Lexend:wght@500;700&display=swap">
+<style>
+/* Same look as the Build Lab: launch view in the middle, lab panel on the right (stacks on phones). */
+:root{
+  --bg:#eef0f2; --panel:#ffffff; --ink:#17212b; --muted:#56616d; --line:#d3dae1;
+  --accent:#c4501a; --accent-ink:#ffffff; --accent-soft:#fbe8dd;
+  --new:#2b7de9; --new-soft:#e1edfd; --chip:#f2f5f7; --scene:#e3e7eb;
+  --good:#1d7a46; --good-soft:#dcf2e4; --bad:#b3261e; --bad-soft:#fbe3e1;
+  --display:"Lexend","Segoe UI",system-ui,sans-serif;
+  --body:"Atkinson Hyperlegible","Segoe UI",system-ui,sans-serif;
+}
+@media (prefers-color-scheme: dark){ :root:not([data-theme="light"]){
+  --bg:#111519; --panel:#1a2027; --ink:#e6edf3; --muted:#9ba8b5; --line:#2d3742;
+  --accent:#ff9a5c; --accent-ink:#2a1206; --accent-soft:#3a2518;
+  --new:#6aa6ff; --new-soft:#172a44; --chip:#222a33; --scene:#1f2730;
+  --good:#6fd39a; --good-soft:#163525; --bad:#ff8a80; --bad-soft:#3d1c1a; color-scheme:dark;
+}}
+:root[data-theme="dark"]{
+  --bg:#111519; --panel:#1a2027; --ink:#e6edf3; --muted:#9ba8b5; --line:#2d3742;
+  --accent:#ff9a5c; --accent-ink:#2a1206; --accent-soft:#3a2518;
+  --new:#6aa6ff; --new-soft:#172a44; --chip:#222a33; --scene:#1f2730;
+  --good:#6fd39a; --good-soft:#163525; --bad:#ff8a80; --bad-soft:#3d1c1a; color-scheme:dark;
+}
+[hidden]{display:none!important}
+html,body{height:100%;margin:0}
+body{background:var(--bg);color:var(--ink);font-family:var(--body);font-size:16px;line-height:1.45;overflow:hidden}
+button,input,select{font:inherit;color:inherit}
+.app{height:100%;box-sizing:border-box;display:grid;grid-template-columns:minmax(0,1fr) 380px;grid-template-rows:auto minmax(0,1fr);gap:12px;padding:12px 16px}
+header{grid-column:1/-1;display:flex;flex-wrap:wrap;align-items:center;gap:8px 16px}
+.brand{margin-right:auto;min-width:0}
+.brand h1{font-family:var(--display);font-weight:700;font-size:22px;margin:0}
+.brand p{margin:0;color:var(--muted);font-size:14px}
+.brand a{color:var(--accent)}
+.btn{border:1px solid var(--line);background:var(--panel);border-radius:10px;padding:8px 12px;cursor:pointer;font-weight:700;font-size:15px;display:inline-flex;align-items:center;justify-content:center;gap:6px;min-height:40px}
+.btn:hover:not(:disabled){border-color:var(--accent)}
+.btn:focus-visible,input:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
+.btn.primary{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
+.btn.on{background:var(--accent-soft);border-color:var(--accent)}
+.btn:disabled{opacity:.45;cursor:default}
+.view{position:relative;border-radius:14px;overflow:hidden;border:1px solid var(--line);background:var(--scene);min-height:0;display:flex;flex-direction:column}
+.stage{position:relative;flex:1;min-height:0}
+.stage canvas{position:absolute;inset:0;width:100%;height:100%;display:block;touch-action:none}
+.status{position:absolute;left:12px;right:12px;top:12px;display:flex;justify-content:center;pointer-events:none}
+.status span{background:var(--panel);border:1px solid var(--line);border-radius:999px;padding:7px 16px;font-size:16px;font-weight:700;box-shadow:0 2px 8px rgba(0,0,0,.12);max-width:100%;text-align:center}
+.camtools{position:absolute;left:12px;top:60px;display:flex;gap:6px;flex-wrap:wrap}
+.camtools .btn{min-height:34px;padding:4px 10px;font-size:14px}
+.frame{position:absolute;right:12px;top:60px;background:rgba(10,14,18,.82);color:#fff;border-radius:10px;padding:6px 12px;font-family:ui-monospace,Menlo,Consolas,monospace;font-size:20px;font-weight:700;pointer-events:none;text-align:right;line-height:1.2}
+.frame small{display:block;font-size:12px;font-weight:400;opacity:.8}
+.bar{display:flex;align-items:center;gap:6px;padding:8px 10px;border-top:1px solid var(--line);background:var(--panel);flex-wrap:wrap}
+.bar .btn{min-height:36px;padding:4px 10px}
+.bar input[type=range]{flex:1 1 140px;min-width:100px;accent-color:var(--accent)}
+.seg{display:inline-flex;border:1px solid var(--line);border-radius:10px;overflow:hidden}
+.seg button{border:0;background:var(--panel);padding:6px 10px;font-weight:700;font-size:14px;cursor:pointer;min-height:36px;min-width:40px}
+.seg button+button{border-left:1px solid var(--line)}
+.seg button.on{background:var(--accent);color:var(--accent-ink)}
+.seg button:disabled{opacity:.45;cursor:default}
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:14px;min-height:0;overflow:auto;padding:14px;display:flex;flex-direction:column;gap:14px}
+.panel h2{font-family:var(--display);font-size:13px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);margin:0 0 6px;font-weight:500}
+.field{display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:center;gap:8px;margin:6px 0}
+.field label{font-weight:700}
+.field input{width:96px;box-sizing:border-box;border:1px solid var(--line);background:var(--chip);border-radius:8px;padding:6px 8px;font-weight:700;text-align:right}
+.tabs{display:grid;grid-template-columns:1fr 1fr;gap:6px}
+.tabs .btn{min-height:44px}
+.card{border:1px solid var(--line);border-radius:12px;padding:12px;display:flex;flex-direction:column;gap:8px}
+ol.do{margin:0;padding-left:22px;display:flex;flex-direction:column;gap:4px}
+ol.do li::marker{color:var(--accent);font-weight:700}
+.note{font-size:13px;color:var(--muted);margin:0}
+.msg{border-radius:10px;padding:10px 12px;font-weight:700}
+.msg.good{background:var(--good-soft);color:var(--good)}
+.msg.bad{background:var(--bad-soft);color:var(--bad)}
+.msg.info{background:var(--new-soft);color:var(--new)}
+.toggles{display:flex;gap:6px;flex-wrap:wrap}
+.toggles .btn{min-height:36px;padding:5px 10px;font-size:14px}
+table{width:100%;border-collapse:collapse;font-size:14px}
+th,td{text-align:left;padding:5px 4px;border-bottom:1px solid var(--line)}
+th{font-size:12px;color:var(--muted);font-weight:700;text-transform:uppercase;letter-spacing:.04em}
+@media (max-width: 900px){
+  body{overflow:auto}
+  .app{height:auto;grid-template-columns:minmax(0,1fr);grid-template-rows:auto}
+  .view{height:72vh}
+  .status span{font-size:14px;border-radius:12px}
+  .frame{font-size:16px}
+}
+</style>
+</head>
+<body>
+<div class="app">
+  <header>
+    <div class="brand">
+      <h1>Catapult Launch Lab</h1>
+      <p>Launch your V5 launcher, film it in slow motion, and predict where the ball lands. Build it first in the <a href="catapult-build-lab.html">Build Lab</a>.</p>
+    </div>
+  </header>
+
+  <main class="view">
+    <div class="stage" id="stage">
+      <canvas id="c" aria-label="Side view of the catapult launch"></canvas>
+      <div class="status"><span id="status">Loading parts…</span></div>
+      <div class="camtools" role="group" aria-label="Camera">
+        <button class="btn on" data-cam="side">Side view</button>
+        <button class="btn" data-cam="close">Launcher close-up</button>
+        <button class="btn" data-cam="free">3D</button>
+      </div>
+      <div class="frame" aria-live="off"><span id="frameNum">Frame 0</span><small>240 frames per second</small></div>
+    </div>
+    <div class="bar" role="group" aria-label="Playback">
+      <button class="btn" id="restart" title="Back to frame 0" aria-label="Back to frame 0">⏮</button>
+      <button class="btn" id="fBack" title="Back 1 frame (←)" aria-label="Back 1 frame">◀ 1</button>
+      <button class="btn" id="play" title="Play / pause (space)" aria-label="Play or pause">▶</button>
+      <button class="btn" id="fNext" title="Forward 1 frame (→)" aria-label="Forward 1 frame">1 ▶</button>
+      <input type="range" id="scrub" min="0" max="0" value="0" step="1" aria-label="Frame">
+      <div class="seg" id="speed" role="group" aria-label="Playback speed">
+        <button data-s="1" class="on">1×</button><button data-s="0.25">¼×</button><button data-s="0.125">⅛×</button>
+      </div>
+    </div>
+  </main>
+
+  <aside class="panel" aria-label="Launch lab">
+    <section>
+      <h2>Your launcher</h2>
+      <div class="field"><label for="kit">Launcher number</label><input id="kit" type="number" min="1" max="30" value="1" inputmode="numeric"></div>
+      <div class="field"><label>Stop bar hole</label>
+        <div class="seg" id="stop"><button data-v="A">A·13</button><button data-v="B" class="on">B·14</button><button data-v="C">C·15</button></div></div>
+      <div class="field"><label>Rubber bands</label>
+        <div class="seg" id="bands"><button data-v="1">1</button><button data-v="2" class="on">2</button><button data-v="3">3</button><button data-v="4">4</button></div></div>
+      <p class="note">Each launcher number shoots a little differently, like real kits. Use the number Mr. Brown gives you.</p>
+    </section>
+
+    <div class="tabs" role="tablist">
+      <button class="btn on" id="tabWall" role="tab" aria-selected="true">1 · Wall test</button>
+      <button class="btn" id="tabCup" role="tab" aria-selected="false">2 · Hit the container</button>
+    </div>
+
+    <section class="card" id="wallCard">
+      <div class="field"><label for="wallD">Wall distance (m)</label><input id="wallD" type="number" step="0.05" min="0.5" max="5" value="2.00"></div>
+      <button class="btn primary" id="launchWall">🚀 Launch at the wall</button>
+      <ol class="do">
+        <li>Launch, then watch it in slow motion (⅛×). Film the screen with your phone if you like.</li>
+        <li>Step frame by frame. Write down the frame where the arm <b>hits the stop bar</b> (the ball leaves the cup) and the frame where the ball <b>touches the wall</b>.</li>
+        <li>Time in the air = (hit frame − release frame) ÷ 240.</li>
+        <li>Use the <b>protractor</b> in the close-up to read the launch angle, and the <b>meter stick</b> to read the release height.</li>
+      </ol>
+      <p class="note">The tape and sticks are in meters. The floor tape starts at 0 right under the ball when it leaves the cup.</p>
+    </section>
+
+    <section class="card" id="cupCard" hidden>
+      <p class="note" id="cupInfo"></p>
+      <div class="field"><label for="pred">Your predicted distance (m)</label><input id="pred" type="number" step="0.01" min="0.3" max="8" placeholder="0.00"></div>
+      <button class="btn primary" id="launchCup">🎯 Place container and launch</button>
+      <div id="cupMsg" class="msg info">Do a wall test with this setup first.</div>
+    </section>
+
+    <section>
+      <h2>Tools</h2>
+      <div class="toggles">
+        <button class="btn on" id="tTrail" aria-pressed="true">Trail dots</button>
+        <button class="btn on" id="tProt" aria-pressed="true">Protractor</button>
+        <button class="btn on" id="tStick" aria-pressed="true">Meter sticks</button>
+      </div>
+    </section>
+
+    <section>
+      <h2>Launch log</h2>
+      <table><thead><tr><th>#</th><th>Test</th><th>Stop</th><th>Bands</th><th>Result</th></tr></thead><tbody id="log"></tbody></table>
+      <p class="note" style="margin-top:6px">No air drag, gravity is 9.8 m/s². Distances are measured along the floor from the release point.</p>
+    </section>
+  </aside>
+</div>
+
+<script src="catapult-build-lab/parts.js"></script>
+<script type="importmap">
+{ "imports": {
+  "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+  "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
+} }
+</script>
+<script type="module">
+import * as THREE from 'three';
+import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
+import { createLauncher } from './catapult-build-lab/launcher.js';
+
+const $ = id => document.getElementById(id);
+const V = (x, y, z) => new THREE.Vector3(x, y, z);
+const IN = 39.37;            // inches per meter (the model is in inches)
+const G = 9.8 * IN;          // gravity, in/s²
+const FPS = 240;             // "camera" frames per second
+
+// URL options for the teacher: ?wall=2.5&rim=0.30&open=0.30&lock=1
+const Q = new URLSearchParams(location.search);
+const num = (k, d) => { const v = parseFloat(Q.get(k)); return Number.isFinite(v) ? v : d; };
+const RIM_H = num('rim', 0.25) * IN;        // container rim height
+const OPEN_R = num('open', 0.30) * IN / 2;  // container opening radius
+const WALL_T = 0.06 * IN;
+if (Q.has('wall')) $('wallD').value = num('wall', 2).toFixed(2);
+if (Q.get('lock') === '1') $('wallD').disabled = true;
+
+// ---------- Scene ----------
+const canvas = $('c'), stage = $('stage');
+const renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
+renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+renderer.shadowMap.enabled = true; renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+renderer.toneMapping = THREE.ACESFilmicToneMapping;
+const scene = new THREE.Scene();
+scene.environment = new THREE.PMREMGenerator(renderer).fromScene(new RoomEnvironment(), 0.04).texture;
+scene.add(new THREE.HemisphereLight(0xffffff, 0x8a8f99, 0.55));
+const sun = new THREE.DirectionalLight(0xffffff, 1.5); sun.position.set(60, 160, 120); sun.castShadow = true;
+sun.target.position.set(60, 0, 0); scene.add(sun.target);
+sun.shadow.mapSize.set(4096, 4096); Object.assign(sun.shadow.camera, { left: -160, right: 160, top: 120, bottom: -120, near: 10, far: 500 });
+sun.shadow.bias = -0.0004; sun.shadow.normalBias = 0.04; scene.add(sun);
+const fill = new THREE.DirectionalLight(0xffffff, 0.45); fill.position.set(-10, 8, 30); scene.add(fill);
+function applyTheme() { scene.background = new THREE.Color(getComputedStyle(document.documentElement).getPropertyValue('--scene').trim() || '#e3e7eb'); }
+applyTheme(); matchMedia('(prefers-color-scheme: dark)').addEventListener('change', applyTheme);
+
+const floor = new THREE.Mesh(new THREE.PlaneGeometry(2000, 600), new THREE.MeshStandardMaterial({ color: 0xd9d4ca, roughness: 0.9 }));
+floor.rotation.x = -Math.PI / 2; floor.position.set(150, 0, 0); floor.receiveShadow = true; scene.add(floor);
+
+// ---------- Launcher ----------
+const L = createLauncher(THREE, scene);
+L.ITEMS.forEach(it => it.g.visible = true);
+L.bandG.visible = true;
+const flightBall = new THREE.Mesh(new THREE.SphereGeometry(L.BALL_R, 32, 20), L.mat('ball'));
+flightBall.castShadow = true; flightBall.visible = false; scene.add(flightBall);
+
+// ---------- Canvas-texture helpers ----------
+function tex(w, h, draw) {
+  const c = document.createElement('canvas'); c.width = w; c.height = h; const g = c.getContext('2d'); draw(g, w, h);
+  const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; t.anisotropy = 8; return t;
+}
+// A ruler: length in meters, cm ticks, numbers every 10 cm.
+function ruler(lenM, vertical, h = 128) {
+  const px = 4096, cm = px / (lenM * 100), fs = Math.round(h * 0.34);
+  const t = tex(px, h, (g, w) => {
+    g.fillStyle = '#f6d34a'; g.fillRect(0, 0, w, h);
+    g.fillStyle = '#1a1a1a'; g.font = `700 ${fs}px Lexend, system-ui, sans-serif`; g.textBaseline = 'bottom';
+    for (let i = 0; i <= lenM * 100; i++) {
+      const x = Math.round(i * cm), L = h * (i % 10 === 0 ? 0.47 : i % 5 === 0 ? 0.31 : 0.17);
+      g.fillRect(Math.min(x, w - 3), 0, 3, L);
+      if (i % 10 === 0 && i > 0 && i < lenM * 100) { const s = (i / 100).toFixed(1); g.fillText(s, x - g.measureText(s).width / 2, h - 6); }
+    }
+  });
+  const lenIn = lenM * IN, wid = lenIn * h / px; grpW = wid;
+  const m = new THREE.Mesh(new THREE.PlaneGeometry(lenIn, wid), new THREE.MeshBasicMaterial({ map: t, transparent: true, toneMapped: false }));
+  const grp = new THREE.Group(); m.position.set(lenIn / 2, -wid / 2, 0); grp.add(m);
+  if (vertical) grp.rotation.z = Math.PI / 2;
+  return grp;
+}
+const tools = { trail: true, prot: true, stick: true };
+
+// Rulers stand just behind the ball's path (z = -9) so the side view shows them and the ball passes in front.
+// Floor tape starts right under the release point.
+let grpW = 0;
+const tape = ruler(6, false, 96); const TAPE_W = grpW; scene.add(tape);
+const stick = ruler(1, true); const STICK_W = grpW; scene.add(stick);
+const wallStick = ruler(1.5, true); const WSTICK_W = grpW; scene.add(wallStick);
+
+// Protractor (0–90° from the floor line, opening forward), centered on the release point.
+const PROT_R = 9;
+const protractor = new THREE.Mesh(new THREE.PlaneGeometry(PROT_R * 2.3, PROT_R * 2.3), new THREE.MeshBasicMaterial({
+  transparent: true, depthTest: false, toneMapped: false,
+  map: tex(1024, 1024, (g, w) => {
+    const c = w / 2, R = w / 2 / 1.15;
+    g.translate(c, c);
+    g.fillStyle = 'rgba(60,150,230,0.16)'; g.beginPath(); g.moveTo(0, 0); g.arc(0, 0, R, -Math.PI / 2, 0); g.closePath(); g.fill();
+    g.strokeStyle = 'rgba(20,90,170,0.95)'; g.fillStyle = 'rgba(20,90,170,0.95)'; g.lineWidth = 3;
+    g.beginPath(); g.arc(0, 0, R, -Math.PI / 2, 0); g.stroke();
+    g.beginPath(); g.moveTo(0, 0); g.lineTo(R, 0); g.stroke();
+    g.font = '700 30px Lexend, system-ui, sans-serif'; g.textAlign = 'center'; g.textBaseline = 'middle';
+    for (let d = 0; d <= 90; d++) {
+      const a = -d * Math.PI / 180, L = d % 10 === 0 ? 56 : d % 5 === 0 ? 38 : 20;
+      g.lineWidth = d % 5 === 0 ? 3 : 1.5;
+      g.beginPath(); g.moveTo(Math.cos(a) * R, Math.sin(a) * R); g.lineTo(Math.cos(a) * (R - L), Math.sin(a) * (R - L)); g.stroke();
+      if (d % 10 === 0) g.fillText(d + '°', Math.cos(a) * (R - 88), Math.sin(a) * (R - 88));
+    }
+    g.beginPath(); g.arc(0, 0, 6, 0, Math.PI * 2); g.fill();
+  })
+}));
+protractor.renderOrder = 20; scene.add(protractor);
+
+// Wall
+const wall = new THREE.Mesh(new THREE.BoxGeometry(2, 110, 90), new THREE.MeshStandardMaterial({ color: 0xf3efe6, roughness: 0.95 }));
+wall.receiveShadow = true; wall.castShadow = true; scene.add(wall);
+const hitMark = new THREE.Mesh(new THREE.CircleGeometry(0.9, 24), new THREE.MeshBasicMaterial({ color: 0xc4501a }));
+hitMark.visible = false; scene.add(hitMark);
+
+// Container (open bin)
+const binMat = new THREE.MeshStandardMaterial({ color: 0x2f7fd6, roughness: 0.55, side: THREE.DoubleSide, transparent: true, opacity: 0.88 });
+const bin = new THREE.Group();
+{
+  const outer = new THREE.Mesh(new THREE.CylinderGeometry(OPEN_R + WALL_T, OPEN_R * 0.88 + WALL_T, RIM_H, 48, 1, true), binMat);
+  outer.position.y = RIM_H / 2; outer.castShadow = true;
+  const bottom = new THREE.Mesh(new THREE.CircleGeometry(OPEN_R * 0.88 + WALL_T, 48), binMat); bottom.rotation.x = -Math.PI / 2; bottom.position.y = 0.05;
+  const rim = new THREE.Mesh(new THREE.TorusGeometry(OPEN_R + WALL_T / 2, WALL_T / 1.6, 8, 48), binMat); rim.rotation.x = Math.PI / 2; rim.position.y = RIM_H;
+  bin.add(outer, bottom, rim);
+}
+bin.visible = false; scene.add(bin);
+
+// Trail dots, every 1/60 s of flight
+const MAX_DOTS = 400;
+const dots = new THREE.InstancedMesh(new THREE.SphereGeometry(0.28, 10, 8), new THREE.MeshBasicMaterial({ color: 0xc4501a }), MAX_DOTS);
+dots.count = 0; dots.frustumCulled = false; scene.add(dots);
+
+// ---------- Launch physics ----------
+const STOP_FACTOR = { A: 0.93, B: 1.0, C: 1.05 };  // more arm swing → a bit more band energy
+function hash(n) { let x = Math.imul(n ^ 0x9e3779b9, 0x85ebca6b); x ^= x >>> 13; x = Math.imul(x, 0xc2b2ae35); x ^= x >>> 16; return (x >>> 0) / 4294967296; }
+const setup = { stop: 'B', bands: 2, kit: 1 };
+function kitFactor() { return 0.9 + 0.2 * hash(setup.kit * 7919 + 13); }
+function launchSpeed() {   // m/s, before the small shot-to-shot wobble
+  return 5.2 * Math.sqrt(setup.bands / 2) * STOP_FACTOR[setup.stop] * kitFactor();
+}
+let phiStop = L.setStop('B');
+
+// Where the ball is when the arm hits the stop, and its velocity then.
+function releaseState(v) {
+  const r = L.BALL_LOCAL.clone().applyAxisAngle(V(0, 0, 1), phiStop);  // from the pivot
+  const w = v / r.length();
+  return { p: r.clone().add(V(L.PX, L.PY, 0)), v: V(w * r.y, -w * r.x, 0), w };
+}
+function releasePoint() { return releaseState(1).p; }
+
+// Simulate one launch. Returns samples every 1/2400 s and the key events.
+function simulate(mode, target) {
+  const vMs = launchSpeed() * (1 + (Math.random() - 0.5) * 0.02);
+  const rel = releaseState(vMs * IN);
+  const dPhi = L.PHI_COCK - phiStop, alpha = rel.w * rel.w / (2 * dPhi), tRel = rel.w / alpha;
+  const R = L.BALL_R, DT = 1 / 2400;
+  const xWall = rel.p.x + parseFloat($('wallD').value) * IN;
+  const xc = rel.p.x + target * IN;
+  const samples = [];
+  let p = rel.p.clone(), v = rel.v.clone(), t = tRel, ev = { tRel, tHit: null, hitY: null, result: null, cross: null }, settled = 0, inBin = false;
+  while (t < tRel + 4) {
+    const prev = p.clone();
+    v.y -= G * DT; p.addScaledVector(v, DT); t += DT;
+    if (mode === 'wall' && p.x + R >= xWall && v.x > 0) {
+      const f = (xWall - R - prev.x) / (p.x - prev.x); ev.tHit = t - DT + f * DT; ev.hitY = prev.y + (p.y - prev.y) * f;
+      p.x = xWall - R; v.x *= -0.3; v.y *= 0.8;
+    }
+    if (mode === 'cup') {
+      const dx = p.x - xc, ax = Math.abs(dx), ri = OPEN_R, ro = OPEN_R + WALL_T;
+      if (ev.cross === null && prev.y >= RIM_H && p.y < RIM_H && v.y < 0) {     // passing the rim height on the way down
+        const f = (prev.y - RIM_H) / (prev.y - p.y); ev.cross = prev.x + (p.x - prev.x) * f - xc;
+        if (Math.abs(ev.cross) < ri - R * 0.6) { inBin = true; ev.result = 'in'; }
+        else if (Math.abs(ev.cross) < ro + R) { ev.result = 'rim'; v.x = -v.x * 0.4 + (dx > 0 ? 15 : -15); v.y = Math.abs(v.y) * 0.3; p.y = RIM_H + 0.01; }
+        else ev.result = ev.cross < 0 ? 'short' : 'long';
+      }
+      if (inBin) {   // bounce around inside the bin
+        if (ax > ri - R) { p.x = xc + Math.sign(dx) * (ri - R); v.x *= -0.4; }
+        if (p.y - R < 0.1) { p.y = 0.1 + R; v.y = Math.abs(v.y) * 0.35; v.x *= 0.7; }
+      } else if (p.y < RIM_H && ax < ro + R && ax > ri - R) {   // outside wall of the bin
+        p.x = xc + Math.sign(dx) * (ro + R); v.x = -v.x * 0.4;
+      }
+    }
+    if (p.y - R < 0) { p.y = R; v.y = Math.abs(v.y) < 25 ? 0 : -v.y * 0.5; v.x *= 0.85; }
+    if (v.y === 0 && p.y <= R + 1e-6) v.x *= 0.995;
+    samples.push(p.clone());
+    if (Math.abs(v.x) < 1 && Math.abs(v.y) < 1 && p.y <= (inBin ? 0.1 + R : R) + 0.01) { if (++settled > 600) break; } else settled = 0;
+  }
+  return { samples, ev, tRel, alpha, DT, end: t, phiStop, xWall, xc, rel, mode, target };
+}
+
+// ---------- Playback ----------
+const play = { sim: null, t: 0, playing: false, speed: 1 };
+function ballAt(t) {
+  const s = play.sim; if (!s || t < s.tRel) return null;
+  const i = (t - s.tRel) / s.DT, k = Math.min(s.samples.length - 1, Math.max(0, Math.floor(i)));
+  if (k <= 0) return s.rel.p.clone();
+  const a = s.samples[k - 1] || s.rel.p, b = s.samples[k], f = Math.min(1, i - k);
+  return a.clone().lerp(b, f);
+}
+function showTime(t) {
+  const s = play.sim; play.t = t;
+  const frame = Math.round(t * FPS);
+  $('frameNum').textContent = `Frame ${frame}`;
+  $('scrub').value = frame;
+  let phi = L.PHI_COCK;
+  if (s) phi = t < s.tRel ? L.PHI_COCK - 0.5 * s.alpha * t * t : s.phiStop + 0.025 * Math.exp(-(t - s.tRel) * 30) * Math.sin((t - s.tRel) * 90);
+  L.armPivot.rotation.z = phi; L.updateBands();
+  const b = ballAt(t);
+  L.ball.visible = !b; flightBall.visible = !!b;
+  if (b) flightBall.position.copy(b);
+  // trail
+  let n = 0;
+  if (s && tools.trail && b) {
+    const m = new THREE.Matrix4();
+    for (let tt = s.tRel; tt <= t && n < MAX_DOTS; tt += 1 / 60) { m.makeTranslation(ballAt(tt)); dots.setMatrixAt(n++, m); }
+    dots.instanceMatrix.needsUpdate = true;
+  }
+  dots.count = n;
+  if (s && s.mode === 'wall' && s.ev.tHit !== null && t >= s.ev.tHit) { hitMark.visible = true; hitMark.position.set(s.xWall - 0.05, s.ev.hitY, 0); }
+  else hitMark.visible = false;
+}
+function endFrame() { return play.sim ? Math.ceil(play.sim.end * FPS) : 0; }
+function setPlaying(on) { play.playing = on; $('play').textContent = on ? '❚❚' : '▶'; }
+$('play').onclick = () => { if (!play.sim) return; if (!play.playing && Math.round(play.t * FPS) >= endFrame()) showTime(0); setPlaying(!play.playing); };
+$('restart').onclick = () => { setPlaying(false); showTime(0); };
+$('fBack').onclick = () => { setPlaying(false); showTime(Math.max(0, Math.round(play.t * FPS) - 1) / FPS); };
+$('fNext').onclick = () => { setPlaying(false); showTime(Math.min(endFrame(), Math.round(play.t * FPS) + 1) / FPS); };
+$('scrub').oninput = e => { setPlaying(false); showTime(+e.target.value / FPS); };
+segment('speed', b => { play.speed = +b.dataset.s; });
+window.addEventListener('keydown', e => {
+  if (e.target.closest && e.target.closest('input')) return;
+  if (e.key === 'ArrowRight') { e.preventDefault(); $('fNext').click(); }
+  if (e.key === 'ArrowLeft') { e.preventDefault(); $('fBack').click(); }
+  if (e.key === ' ') { e.preventDefault(); $('play').click(); }
+});
+
+// ---------- Setup controls ----------
+function segment(id, fn) {
+  const el = $(id);
+  el.querySelectorAll('button').forEach(b => b.onclick = () => { el.querySelectorAll('button').forEach(x => x.classList.toggle('on', x === b)); fn(b); });
+}
+function markSeg(id, v) { $(id).querySelectorAll('button').forEach(x => x.classList.toggle('on', x.dataset.v === String(v))); }
+const lab = { testedKey: null, trial: 0 };
+const setupKey = () => `${setup.kit}|${setup.stop}|${setup.bands}`;
+function changed() {
+  phiStop = L.setStop(setup.stop);
+  play.sim = null; setPlaying(false); dots.count = 0; bin.visible = false; hitMark.visible = false;
+  $('scrub').max = 0; showTime(0); placeScene(); updateCupCard();
+}
+segment('stop', b => { setup.stop = b.dataset.v; changed(); });
+segment('bands', b => { setup.bands = +b.dataset.v; changed(); });
+$('kit').onchange = () => { setup.kit = Math.max(1, Math.min(30, Math.round(+$('kit').value || 1))); $('kit').value = setup.kit; changed(); };
+$('wallD').onchange = () => { const d = Math.max(0.5, Math.min(5, +$('wallD').value || 2)); $('wallD').value = d.toFixed(2); lab.testedKey = null; changed(); };
+
+function toggle(id, key, after) { $(id).onclick = e => { tools[key] = !tools[key]; e.currentTarget.classList.toggle('on', tools[key]); e.currentTarget.setAttribute('aria-pressed', tools[key]); after && after(); showTime(play.t); }; }
+toggle('tTrail', 'trail'); toggle('tProt', 'prot', placeScene); toggle('tStick', 'stick', placeScene);
+
+// Mode tabs
+let mode = 'wall';
+function setMode(m) {
+  mode = m;
+  $('tabWall').classList.toggle('on', m === 'wall'); $('tabCup').classList.toggle('on', m === 'cup');
+  $('tabWall').setAttribute('aria-selected', m === 'wall'); $('tabCup').setAttribute('aria-selected', m === 'cup');
+  $('wallCard').hidden = m !== 'wall'; $('cupCard').hidden = m !== 'cup';
+  play.sim = null; setPlaying(false); dots.count = 0; bin.visible = false; showTime(0); placeScene(); updateCupCard(); camPreset(camMode);
+  status(m === 'wall' ? 'Wall test: launch at the wall and time the flight.' : 'Enter your predicted distance, then launch.');
+}
+$('tabWall').onclick = () => setMode('wall'); $('tabCup').onclick = () => setMode('cup');
+
+function placeScene() {
+  const p = releasePoint();
+  const wallX = p.x + parseFloat($('wallD').value) * IN;
+  wall.visible = mode === 'wall'; wall.position.set(wallX + 1, 55, 0);
+  tape.position.set(p.x, TAPE_W, -9); tape.visible = tools.stick;
+  stick.position.set(p.x - 2.2, 0, -9); stick.visible = tools.stick;
+  wallStick.position.set(wallX - WSTICK_W - 0.05, 0, -9); wallStick.visible = tools.stick && mode === 'wall';
+  protractor.position.set(p.x, p.y, 8.4); protractor.visible = tools.prot && camMode !== 'free';
+}
+
+function status(t) { $('status').textContent = t; }
+function updateCupCard() {
+  $('cupInfo').textContent = `Container: rim ${(RIM_H / IN).toFixed(2)} m high, opening ${(OPEN_R * 2 / IN).toFixed(2)} m across. It is centered on the distance you type.`;
+  const ok = lab.testedKey === setupKey();
+  $('launchCup').disabled = !ok;
+  if (!ok) { const m = $('cupMsg'); m.className = 'msg info'; m.textContent = 'Do a wall test with this setup first.'; }
+}
+
+function addLog(test, result, cls) {
+  lab.trial++;
+  const tr = document.createElement('tr');
+  tr.innerHTML = `<td>${lab.trial}</td><td>${test}</td><td>${setup.stop}</td><td>${setup.bands}</td><td style="font-weight:700;color:${cls ? `var(--${cls})` : 'inherit'}">${result}</td>`;
+  $('log').prepend(tr);
+}
+
+function startSim(sim) {
+  play.sim = sim; $('scrub').max = endFrame();
+  dots.count = 0; showTime(0); setPlaying(true);
+}
+
+$('launchWall').onclick = () => {
+  changed();
+  const sim = simulate('wall', 0);
+  startSim(sim);
+  lab.testedKey = setupKey(); updateCupCard();
+  addLog(`Wall ${(+$('wallD').value).toFixed(2)} m`, sim.ev.tHit !== null ? 'Hit the wall' : 'Fell short of the wall', null);
+  status(sim.ev.tHit !== null ? 'Now find the release frame and the wall-hit frame.' : 'The ball landed before the wall. Move the wall closer or add a band.');
+};
+
+$('launchCup').onclick = () => {
+  const d = parseFloat($('pred').value);
+  if (!(d > 0.2 && d < 9)) { $('pred').focus(); const m = $('cupMsg'); m.className = 'msg bad'; m.textContent = 'Type your predicted distance in meters first, like 2.35'; return; }
+  changed();
+  bin.position.set(releasePoint().x + d * IN, 0, 0); bin.visible = true;
+  const sim = simulate('cup', d);
+  startSim(sim);
+  camPreset(camMode);
+  const e = sim.ev, m = $('cupMsg');
+  const off = e.cross === null ? null : Math.round(Math.abs(e.cross) / IN * 100);
+  let text, cls;
+  if (e.result === 'in') { text = 'In the container! Nice prediction.'; cls = 'good'; addLog(`Predict ${d.toFixed(2)} m`, 'In', 'good'); }
+  else {
+    const where = e.result === 'rim' ? `Hit the rim, ${off} cm ${e.cross < 0 ? 'short of' : 'past'} center` : `${e.result === 'short' ? 'Short' : 'Long'} by ${off} cm`;
+    addLog(`Predict ${d.toFixed(2)} m`, where, 'bad');
+    // Like in class: a miss means the teacher changes one thing, and you test again.
+    const opts = [];
+    if (setup.bands < 4) opts.push(['bands', setup.bands + 1]);
+    if (setup.bands > 1) opts.push(['bands', setup.bands - 1]);
+    for (const k of ['A', 'B', 'C']) if (k !== setup.stop) opts.push(['stop', k]);
+    const [key, val] = opts[Math.floor(Math.random() * opts.length)];
+    const before = key === 'bands' ? `${setup.bands} bands` : `stop hole ${setup.stop}`;
+    setup[key] = val; markSeg(key === 'bands' ? 'bands' : 'stop', val);
+    const after = key === 'bands' ? `${val} band${val > 1 ? 's' : ''}` : `stop hole ${val}`;
+    text = `${where}. Mr. Brown changed one thing: ${before} → ${after}. Do a new wall test and try again.`; cls = 'bad';
+  }
+  m.className = 'msg ' + cls; m.textContent = text;
+  status(e.result === 'in' ? 'In the container!' : 'Missed. Watch the replay, then do a new wall test.');
+  // keep the cup button locked until a new wall test
+  if (e.result !== 'in') { $('launchCup').disabled = true; }
+};
+
+// ---------- Cameras ----------
+const persp = new THREE.PerspectiveCamera(32, 1, 0.5, 3000);
+const ortho = new THREE.OrthographicCamera(-1, 1, 1, -1, -1000, 3000);
+let camera = ortho;
+const controls = new OrbitControls(ortho, canvas);
+controls.enableDamping = true;
+let camMode = 'side', orthoH = 40;
+function fitOrtho(x0, x1, y0, y1) {
+  const w = stage.clientWidth, h = Math.max(1, stage.clientHeight), aspect = w / h;
+  const cx = (x0 + x1) / 2;
+  orthoH = Math.max((y1 - y0), (x1 - x0) / aspect) / 2;
+  const cy = y0 + orthoH;   // keep the floor near the bottom; spare room goes to the top
+  ortho.zoom = 1; controls.target.set(cx, cy, 0); ortho.position.set(cx, cy, 400);
+  ortho.lookAt(cx, cy, 0); resize();
+}
+function camPreset(m) {
+  camMode = m; placeScene();
+  document.querySelectorAll('[data-cam]').forEach(b => b.classList.toggle('on', b.dataset.cam === m));
+  const p = releasePoint();
+  const far = mode === 'wall' ? p.x + parseFloat($('wallD').value) * IN + 8 : p.x + Math.max(2.5, parseFloat($('pred').value) || 2.5) * IN + OPEN_R + 10;
+  if (m === 'free') {
+    camera = persp; controls.object = persp; controls.enableRotate = true; controls.maxPolarAngle = Math.PI * 0.495;
+    controls.target.set(p.x + 36, 10, 0); persp.position.set(p.x - 22, 30, 62);
+  } else {
+    camera = ortho; controls.object = ortho; controls.enableRotate = false;
+    if (m === 'side') fitOrtho(-14, far, -4, Math.max(40, p.y + 30));
+    else fitOrtho(p.x - 16, p.x + 18, -1, p.y + 13);
+  }
+  resize();
+}
+document.querySelectorAll('[data-cam]').forEach(b => b.onclick = () => camPreset(b.dataset.cam));
+
+function resize() {
+  const w = stage.clientWidth, h = Math.max(1, stage.clientHeight);
+  renderer.setSize(w, h, false);
+  persp.aspect = w / h; persp.updateProjectionMatrix();
+  const a = w / h; Object.assign(ortho, { left: -orthoH * a, right: orthoH * a, top: orthoH, bottom: -orthoH }); ortho.updateProjectionMatrix();
+}
+new ResizeObserver(() => camPreset(camMode)).observe(stage);
+
+// ---------- Loop ----------
+let last = performance.now();
+function frame(now) {
+  const dt = Math.min(0.05, (now - last) / 1000); last = now;
+  if (play.playing && play.sim) {
+    const t = play.t + dt * play.speed, end = play.sim.end;
+    if (t >= end) { showTime(end); setPlaying(false); } else showTime(t);
+  }
+  controls.update();
+  renderer.render(scene, camera);
+  requestAnimationFrame(frame);
+}
+changed(); setMode('wall'); camPreset('side');
+requestAnimationFrame(frame);
+window.__launch = { simulate, setup, play, showTime, camPreset, renderer, scene, get camera() { return camera; }, controls, releasePoint, launchSpeed, L, setMode };
+</script>
+</body>
+</html>
