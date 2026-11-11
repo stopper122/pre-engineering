@@ -95,7 +95,7 @@ th{font-size:12px;color:var(--muted);font-weight:700;text-transform:uppercase;le
   <header>
     <div class="brand">
       <h1>Catapult Launch Lab</h1>
-      <p>Launch your V5 launcher, film it in slow motion, and predict where the ball lands. Build it first in the <a href="catapult-build-lab.html">Build Lab</a>.</p>
+      <p>Launch your V5 launcher, film it in slow motion, and predict where the ball lands. Build it first in the <a href="catapult-builder.html">Catapult Builder</a>.</p>
     </div>
   </header>
 
@@ -123,6 +123,17 @@ th{font-size:12px;color:var(--muted);font-weight:700;text-transform:uppercase;le
   </main>
 
   <aside class="panel" aria-label="Launch lab">
+    <section class="card" id="buildCard">
+      <h2 style="margin:0">Your build</h2>
+      <div id="buildOk" class="msg good" hidden></div>
+      <div id="buildNeed">
+        <p style="margin:0 0 8px">Build your launcher in the <a href="catapult-builder.html" style="color:var(--accent)">Catapult Builder</a> first. When it passes the check, it shows up here.</p>
+        <div class="field"><label for="bcode">Or type your build code</label><input id="bcode" placeholder="V5C-B-XXXX" style="width:140px;text-align:left" autocomplete="off"></div>
+        <button class="btn" id="bload">Load build</button>
+        <div id="bmsg" class="msg bad" hidden style="margin-top:8px"></div>
+      </div>
+    </section>
+
     <section>
       <h2>Your launcher</h2>
       <div class="field"><label for="kit">Launcher number</label><input id="kit" type="number" min="1" max="30" value="1" inputmode="numeric"></div>
@@ -458,7 +469,7 @@ function status(t) { $('status').textContent = t; }
 function updateCupCard() {
   $('cupInfo').textContent = `Container: rim ${(RIM_H / IN).toFixed(2)} m high, opening ${(OPEN_R * 2 / IN).toFixed(2)} m across. It is centered on the distance you type.`;
   const ok = lab.testedKey === setupKey();
-  $('launchCup').disabled = !ok;
+  $('launchCup').disabled = !ok || !build;
   if (!ok) { const m = $('cupMsg'); m.className = 'msg info'; m.textContent = 'Do a wall test with this setup first.'; }
 }
 
@@ -566,6 +577,31 @@ function frame(now) {
   controls.update();
   renderer.render(scene, camera);
   requestAnimationFrame(frame);
+}
+// ---------- The student's build from the Catapult Builder ----------
+// ?build=0 lets a teacher demo the lab without a build.
+let build = null;
+function codeHash(s) { let h = 2166136261; for (const c of s) { h ^= c.charCodeAt(0); h = Math.imul(h, 16777619); } return (h >>> 0).toString(36).toUpperCase().slice(-4).padStart(4, '0'); }
+function readCode(code) { const m = /^V5C-([ABC])-([0-9A-Z]{4})$/.exec((code || '').trim().toUpperCase()); return m && codeHash('catapult|' + m[1]) === m[2] ? { stop: m[1], code: m[0] } : null; }
+function useBuild(b) {
+  build = b;
+  $('buildNeed').hidden = !!b; $('buildOk').hidden = !b;
+  if (b) {
+    $('buildOk').textContent = b.demo ? 'Demo launcher (no build needed).' : `Your build is loaded ✓ Stop bar in hole ${b.stop}. Code ${b.code}`;
+    setup.stop = b.stop; markSeg('stop', b.stop);
+  }
+  $('launchWall').disabled = !b; changed();
+}
+$('bload').onclick = () => {
+  const b = readCode($('bcode').value);
+  if (b) { try { localStorage.setItem('v5CatapultBuild', JSON.stringify({ v: 1, ...b, at: Date.now() })); } catch {} useBuild(b); $('bmsg').hidden = true; }
+  else { $('bmsg').hidden = false; $('bmsg').textContent = 'That code does not match. Check it, or finish your build in the Catapult Builder.'; }
+};
+$('bcode').onkeydown = e => { if (e.key === 'Enter') $('bload').click(); };
+{
+  let saved = null; try { saved = JSON.parse(localStorage.getItem('v5CatapultBuild')); } catch {}
+  if (Q.get('build') === '0') useBuild({ stop: 'B', demo: true });
+  else useBuild(saved && readCode(saved.code) ? readCode(saved.code) : null);
 }
 changed(); setMode('wall'); camPreset('side');
 requestAnimationFrame(frame);

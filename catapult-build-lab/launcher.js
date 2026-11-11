@@ -1,4 +1,4 @@
-// Shared 3D model of the V5 catapult launcher, used by the Build Lab and the Launch Lab.
+// Shared 3D model of the V5 catapult launcher, used by the Build Lab, the Builder and the Launch Lab.
 // Needs catapult-build-lab/parts.js loaded first (window.VEX_PARTS). Units are inches.
 export function createLauncher(THREE, scene) {
 const V = (x, y, z) => new THREE.Vector3(x, y, z);
@@ -33,7 +33,7 @@ function part(key, cols, t) {
   m.matrixAutoUpdate = false;
   const [a, b, c] = cols;
   m.matrix.set(a[0], b[0], c[0], t[0], a[1], b[1], c[1], t[1], a[2], b[2], c[2], t[2], 0, 0, 0, 1);
-  m.castShadow = true; m.receiveShadow = true;
+  m.castShadow = true; m.receiveShadow = true; m.userData.key = key;
   return m;
 }
 const X = [1, 0, 0], Y = [0, 1, 0], Z = [0, 0, 1], nX = [-1, 0, 0], nY = [0, -1, 0], nZ = [0, 0, -1];
@@ -140,5 +140,5 @@ function updateBands() {
 
 // Move the stop bar to hole A, B or C and return the arm angle where it stops.
 function setStop(k) { stopG.position.set(1.25, STOP[k], 0); return -(Math.PI / 2 - stopTheta(STOP[k])); }
-return { setStop, ball, BALL_R, BALL_LOCAL, trig, V, root, armPivot, stopG, ITEMS, COLORS, mat, part, PX, PY, STOP, ARM_LOW, BAR_R, PHI_COCK, PHI_STOP, stopTheta, CUP_X, cup, bandG, updateBands };
+return { geo, KIND, setStop, ball, BALL_R, BALL_LOCAL, trig, V, root, armPivot, stopG, ITEMS, COLORS, mat, part, PX, PY, STOP, ARM_LOW, BAR_R, PHI_COCK, PHI_STOP, stopTheta, CUP_X, cup, bandG, updateBands };
 }

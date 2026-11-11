@@ -1,0 +1,553 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Catapult Builder</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:wght@400;700&family=Lexend:wght@500;700&display=swap">
+<style>
+/* Same look as the Build Lab: parts library on the left, the build in the middle, the check panel on the right. */
+:root{
+  --bg:#eef0f2; --panel:#ffffff; --ink:#17212b; --muted:#56616d; --line:#d3dae1;
+  --accent:#c4501a; --accent-ink:#ffffff; --accent-soft:#fbe8dd;
+  --new:#2b7de9; --new-soft:#e1edfd; --chip:#f2f5f7; --scene:#e3e7eb;
+  --good:#1d7a46; --good-soft:#dcf2e4; --bad:#b3261e; --bad-soft:#fbe3e1;
+  --display:"Lexend","Segoe UI",system-ui,sans-serif;
+  --body:"Atkinson Hyperlegible","Segoe UI",system-ui,sans-serif;
+}
+@media (prefers-color-scheme: dark){ :root:not([data-theme="light"]){
+  --bg:#111519; --panel:#1a2027; --ink:#e6edf3; --muted:#9ba8b5; --line:#2d3742;
+  --accent:#ff9a5c; --accent-ink:#2a1206; --accent-soft:#3a2518;
+  --new:#6aa6ff; --new-soft:#172a44; --chip:#222a33; --scene:#1f2730;
+  --good:#6fd39a; --good-soft:#163525; --bad:#ff8a80; --bad-soft:#3d1c1a; color-scheme:dark;
+}}
+:root[data-theme="dark"]{
+  --bg:#111519; --panel:#1a2027; --ink:#e6edf3; --muted:#9ba8b5; --line:#2d3742;
+  --accent:#ff9a5c; --accent-ink:#2a1206; --accent-soft:#3a2518;
+  --new:#6aa6ff; --new-soft:#172a44; --chip:#222a33; --scene:#1f2730;
+  --good:#6fd39a; --good-soft:#163525; --bad:#ff8a80; --bad-soft:#3d1c1a; color-scheme:dark;
+}
+[hidden]{display:none!important}
+html,body{height:100%;margin:0}
+body{background:var(--bg);color:var(--ink);font-family:var(--body);font-size:16px;line-height:1.45;overflow:hidden}
+button,input{font:inherit;color:inherit}
+.app{height:100%;box-sizing:border-box;display:grid;grid-template-columns:250px minmax(0,1fr) 330px;grid-template-rows:auto minmax(0,1fr);gap:12px;padding:12px 16px}
+header{grid-column:1/-1;display:flex;flex-wrap:wrap;align-items:center;gap:8px 16px}
+.brand{margin-right:auto;min-width:0}
+.brand h1{font-family:var(--display);font-weight:700;font-size:22px;margin:0}
+.brand p{margin:0;color:var(--muted);font-size:14px}
+.brand a{color:var(--accent)}
+.btn{border:1px solid var(--line);background:var(--panel);border-radius:10px;padding:8px 12px;cursor:pointer;font-weight:700;font-size:15px;display:inline-flex;align-items:center;justify-content:center;gap:6px;min-height:40px;text-decoration:none}
+.btn:hover:not(:disabled){border-color:var(--accent)}
+.btn:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
+.btn.primary{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
+.btn.primary kbd{background:transparent;color:inherit;border-color:currentColor}
+.btn.on{background:var(--accent-soft);border-color:var(--accent)}
+.btn.danger{color:var(--bad)}
+.btn:disabled{opacity:.45;cursor:default}
+kbd{font-family:ui-monospace,Menlo,Consolas,monospace;font-size:12px;border:1px solid var(--line);border-bottom-width:2px;border-radius:4px;padding:0 4px;background:var(--chip)}
+.view{position:relative;border-radius:14px;overflow:hidden;border:1px solid var(--line);background:var(--scene);min-height:0}
+.view canvas{position:absolute;inset:0;width:100%;height:100%;display:block;touch-action:none}
+.status{position:absolute;left:12px;right:12px;top:12px;display:flex;justify-content:center;pointer-events:none}
+.status span{background:var(--panel);border:1px solid var(--line);border-radius:999px;padding:7px 16px;font-size:16px;font-weight:700;box-shadow:0 2px 8px rgba(0,0,0,.12);max-width:100%;text-align:center}
+.status span.good{background:var(--good-soft);color:var(--good);border-color:var(--good)}
+.status span.bad{background:var(--bad-soft);color:var(--bad);border-color:var(--bad)}
+.camtools{position:absolute;right:12px;top:60px;display:flex;flex-direction:column;gap:6px}
+.camtools .btn{width:40px;padding:0}
+.handbar{position:absolute;left:12px;right:12px;bottom:12px;display:flex;flex-wrap:wrap;gap:6px;justify-content:center}
+.handbar .btn{min-height:38px;padding:5px 10px;font-size:14px;box-shadow:0 2px 8px rgba(0,0,0,.12)}
+.side{background:var(--panel);border:1px solid var(--line);border-radius:14px;min-height:0;overflow:auto;padding:14px;display:flex;flex-direction:column;gap:12px}
+.side h2{font-family:var(--display);font-size:13px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);margin:0;font-weight:500}
+.lib{display:flex;flex-direction:column;gap:6px}
+.lib button{display:grid;grid-template-columns:64px minmax(0,1fr);gap:8px;align-items:center;text-align:left;border:1px solid var(--line);background:var(--chip);border-radius:10px;padding:4px 8px 4px 4px;cursor:pointer}
+.lib button:hover:not(:disabled){border-color:var(--accent)}
+.lib button.on{background:var(--accent-soft);border-color:var(--accent)}
+.lib button:disabled{opacity:.4;cursor:default}
+.lib img{width:64px;height:48px;object-fit:contain;border-radius:6px;background:var(--panel)}
+.lib b{display:block;font-size:14px;line-height:1.2}
+.lib span{font-size:13px;color:var(--muted)}
+.lib span.left{font-weight:700;color:var(--new)}
+.row{display:flex;gap:6px;flex-wrap:wrap}
+.row .btn{flex:1 1 auto}
+.note{font-size:13px;color:var(--muted);margin:0}
+ol.do{margin:0;padding-left:22px;display:flex;flex-direction:column;gap:4px;font-size:15px}
+ol.do li::marker{color:var(--accent);font-weight:700}
+.meter{height:10px;border-radius:999px;background:var(--chip);overflow:hidden;border:1px solid var(--line)}
+.meter i{display:block;height:100%;background:var(--new);width:0;transition:width .3s}
+.issues{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:6px}
+.issues li{border-radius:8px;padding:7px 10px;font-size:14px;background:var(--bad-soft);color:var(--bad);font-weight:700}
+.issues li.good{background:var(--good-soft);color:var(--good)}
+.issues li.info{background:var(--new-soft);color:var(--new)}
+.code{font-family:ui-monospace,Menlo,Consolas,monospace;font-size:20px;font-weight:700;letter-spacing:.06em;text-align:center;background:var(--chip);border-radius:8px;padding:8px}
+.toggles{display:flex;gap:6px;flex-wrap:wrap}
+.toggles .btn{min-height:36px;padding:5px 10px;font-size:14px}
+@media (max-width: 1100px){
+  body{overflow:auto}
+  .app{height:auto;grid-template-columns:minmax(0,1fr);grid-template-rows:auto}
+  .view{height:62vh;order:1}
+  header{order:0}
+  #libPanel{order:2} #checkPanel{order:3}
+  .lib{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr))}
+  .status span{font-size:14px;border-radius:12px}
+}
+</style>
+</head>
+<body>
+<div class="app">
+  <header>
+    <div class="brand">
+      <h1>Catapult Builder</h1>
+      <p>Build the V5 launcher from the parts library. Parts snap to the holes. Stuck? Open the step-by-step <a href="catapult-build-lab.html">Build Lab</a>.</p>
+    </div>
+    <div class="row">
+      <button class="btn" id="undo" title="Undo (Ctrl+Z)">↶ Undo</button>
+      <button class="btn danger" id="clear">Start over</button>
+    </div>
+  </header>
+
+  <aside class="side" id="libPanel" aria-label="Parts library">
+    <h2>Parts library</h2>
+    <div class="lib" id="lib"></div>
+    <p class="note">Each part starts the way it comes out of the part file, like inserting it in SolidWorks. Turn it to fit.</p>
+  </aside>
+
+  <main class="view" id="view">
+    <canvas id="c" aria-label="3D build area"></canvas>
+    <div class="status"><span id="status">Loading parts…</span></div>
+    <div class="camtools">
+      <button class="btn" id="zin" title="Zoom in" aria-label="Zoom in">+</button>
+      <button class="btn" id="zout" title="Zoom out" aria-label="Zoom out">−</button>
+      <button class="btn" id="home" title="Reset view" aria-label="Reset view">⌂</button>
+    </div>
+    <div class="handbar" id="handBar" hidden>
+      <button class="btn" id="hTurn">↻ Turn <kbd>R</kbd></button>
+      <button class="btn" id="hTilt">⤾ Tilt <kbd>T</kbd></button>
+      <button class="btn" id="hFlip">⇅ Flip <kbd>F</kbd></button>
+      <button class="btn primary" id="hStop">✋ Put it back <kbd>Esc</kbd></button>
+    </div>
+    <div class="handbar" id="selBar" hidden>
+      <button class="btn" id="sMove">✥ Pick it up</button>
+      <button class="btn danger" id="sDel">🗑 Remove <kbd>Del</kbd></button>
+      <button class="btn primary" id="sDone">✓ Done</button>
+    </div>
+  </main>
+
+  <aside class="side" id="checkPanel" aria-label="Check your build">
+    <section style="display:flex;flex-direction:column;gap:6px">
+      <h2>How to build</h2>
+      <ol class="do">
+        <li>Click a part in the library.</li>
+        <li>Move it over the build. Dots show where it can snap.</li>
+        <li>Turn it with <kbd>R</kbd> <kbd>T</kbd> <kbd>F</kbd> until it faces the right way, then click to place it.</li>
+        <li>Click a placed part to pick it up or remove it.</li>
+      </ol>
+      <p class="note">Drag empty space to look around. Right-drag to slide. Scroll to zoom. The arm stays level while you build.</p>
+    </section>
+    <section style="display:flex;flex-direction:column;gap:6px">
+      <h2>Progress</h2>
+      <div class="meter"><i id="meter"></i></div>
+      <p class="note" id="count">0 of 0 parts placed</p>
+    </section>
+    <button class="btn primary" id="check">✓ Check my build</button>
+    <ul class="issues" id="issues"></ul>
+    <section id="doneBox" hidden style="display:flex;flex-direction:column;gap:8px">
+      <h2>Your launcher is ready</h2>
+      <p class="note">It's saved on this computer for the Launch Lab. On another computer, type this build code there.</p>
+      <div class="code" id="code"></div>
+      <a class="btn primary" id="toSim" href="catapult-launch-lab.html">🚀 Open it in the Launch Lab</a>
+    </section>
+    <section style="display:flex;flex-direction:column;gap:6px">
+      <h2>View</h2>
+      <div class="toggles">
+        <button class="btn on" id="tDots" aria-pressed="true">Snap dots</button>
+        <button class="btn" id="tGhost" aria-pressed="false">See-through metal</button>
+      </div>
+    </section>
+  </aside>
+</div>
+
+<script src="catapult-build-lab/parts.js"></script>
+<script type="importmap">
+{ "imports": {
+  "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+  "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
+} }
+</script>
+<script type="module">
+import * as THREE from 'three';
+import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
+import { createLauncher } from './catapult-build-lab/launcher.js';
+
+const $ = id => document.getElementById(id);
+const V = (x, y, z) => new THREE.Vector3(x, y, z);
+const SAVE_KEY = 'v5CatapultBuilder', BUILD_KEY = 'v5CatapultBuild';
+const store = {
+  get(k) { try { return JSON.parse(localStorage.getItem(k)); } catch { return null; } },
+  set(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch {} },
+  del(k) { try { localStorage.removeItem(k); } catch {} },
+};
+
+// ---------- Scene ----------
+const canvas = $('c'), view = $('view');
+const renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
+renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+renderer.shadowMap.enabled = true; renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+renderer.toneMapping = THREE.ACESFilmicToneMapping;
+const scene = new THREE.Scene();
+const envTex = new THREE.PMREMGenerator(renderer).fromScene(new RoomEnvironment(), 0.04).texture;
+scene.environment = envTex;
+const camera = new THREE.PerspectiveCamera(32, 1, 0.1, 400);
+const controls = new OrbitControls(camera, canvas);
+controls.enableDamping = true; controls.maxPolarAngle = Math.PI * 0.495; controls.minDistance = 3; controls.maxDistance = 70;
+scene.add(new THREE.HemisphereLight(0xffffff, 0x8a8f99, 0.55));
+const sun = new THREE.DirectionalLight(0xffffff, 1.5); sun.position.set(8, 20, 12); sun.castShadow = true;
+sun.shadow.mapSize.set(2048, 2048); Object.assign(sun.shadow.camera, { left: -14, right: 14, top: 14, bottom: -14, near: 1, far: 60 });
+sun.shadow.bias = -0.0004; sun.shadow.normalBias = 0.02; scene.add(sun);
+const fill = new THREE.DirectionalLight(0xffffff, 0.45); fill.position.set(-10, 8, -8); scene.add(fill);
+const floor = new THREE.Mesh(new THREE.PlaneGeometry(300, 300), new THREE.ShadowMaterial({ opacity: 0.15 }));
+floor.rotation.x = -Math.PI / 2; floor.receiveShadow = true; scene.add(floor);
+const grid = new THREE.GridHelper(40, 80, 0x9aa3ad, 0xc4cad1); grid.material.transparent = true; grid.material.opacity = 0.35; grid.position.y = 0.002; scene.add(grid);
+function applyTheme() { scene.background = new THREE.Color(getComputedStyle(document.documentElement).getPropertyValue('--scene').trim() || '#e3e7eb'); }
+applyTheme(); matchMedia('(prefers-color-scheme: dark)').addEventListener('change', applyTheme);
+
+// ---------- Where every part goes (taken from the shared launcher model) ----------
+const L = createLauncher(THREE, scene);
+L.armPivot.rotation.z = 0; L.setStop('B');
+L.root.updateMatrixWorld(true);
+scene.remove(L.root);
+
+const NAMES = {
+  uch: 'U-channel 2x2x2x20', c15: 'C-channel 1x2x1x15', c25: 'C-channel 1x2x1x25', brg: 'Flat bearing',
+  s2: '2" shaft', s3: '3" shaft', s4: '4" shaft', col: 'Shaft collar', spc: '1/8" nylon spacer',
+  sc12: '#8-32 × 1/2" screw', sc38: '#8-32 × 3/8" screw', nut: '#8-32 nut',
+};
+const LIB_ORDER = ['uch', 'c15', 'c25', 'brg', 's4', 's3', 's2', 'col', 'spc', 'sc12', 'sc38', 'nut'];
+// Which part-file axes must point the right way. [axis, true = this direction exactly, false = either way]
+const KEYAX = {
+  uch: [[1, true], [0, false]], c15: [[2, true], [0, false]], c25: [[2, true], [0, false]],
+  s2: [[2, false]], s3: [[2, false]], s4: [[2, false]], col: [[2, false]], spc: [[1, false]], nut: [[1, false]],
+  sc12: [[0, true]], sc38: [[0, true]], brg: [[0, true], [1, false]],
+};
+const LC = {};   // the middle of each part, in part-file coordinates
+for (const k of LIB_ORDER) { const g = L.geo(k); g.computeBoundingBox(); LC[k] = g.boundingBox.getCenter(new THREE.Vector3()); }
+
+const sideOf = z => (z > 0 ? 'right' : 'left');
+const TURN_HINT = {
+  'Spine': 'The spine goes open side up.',
+  'Cross member': 'Cross members go open side down, under the spine.',
+  'Upright': 'Uprights go with the flat side against the spacers and the open side facing out.',
+  'Arm': 'The arm goes open side down.',
+  'Flat bearing': 'The flat side of the bearing goes against the upright, round part facing out.',
+  'Screw 3/8"': 'Base screws go head up, inside the spine.',
+  'Screw 1/2"': 'Screws go head on the outside.',
+};
+const SLOTS = [];
+let stopSlot = null;
+for (const it of L.ITEMS) {
+  if (it.step > 7) continue;
+  const mesh = it.g.children[0];
+  const key = mesh.userData.key; if (!key) continue;
+  const M = mesh.matrixWorld.clone();
+  const R = new THREE.Quaternion().setFromRotationMatrix(M);
+  const c = LC[key].clone().applyMatrix4(M);
+  const slot = { name: it.name, key, step: it.step, options: [{ c, R, ok: true }], filled: null };
+  // Wrong-but-tempting holes nearby, so students have to count holes.
+  const off = (dx, dy, msg) => slot.options.push({ c: c.clone().add(V(dx, dy, 0)), R, ok: false, msg });
+  if (it.name === 'Upright') for (const d of [-0.5, 0.5]) off(d, 0, `The ${sideOf(c.z)} upright is one hole off. It goes over spine holes 13–14.`);
+  if (it.name === 'Flat bearing') for (const d of [-0.5, 0.5]) off(0, d, `The ${sideOf(c.z)} bearing is one hole off. Center it on upright hole 11 (front column).`);
+  if (it.name === 'Arm') for (const d of [-1, -0.5, 0.5, 1]) off(d, 0, 'The arm is on the wrong hole. Arm hole 6 from the short end goes on the pivot.');
+  if (it.name.startsWith('2" shaft')) for (const d of [-0.5, 0.5]) off(d, 0, 'The band peg goes in arm hole 2 from the short end.');
+  if (it.name.includes('catch pin')) for (const d of [-0.5, 0.5]) off(d, 0, 'The catch pin goes in arm hole 9 from the long end.');
+  if (it.step === 6) {   // stop bar and its collars: holes 12–16 of the back column; 13, 14, 15 are A, B, C
+    slot.options = [];
+    for (const [hole, k] of [[12, null], [13, 'A'], [14, 'B'], [15, 'C'], [16, null]]) {
+      const dy = (hole - 14) * 0.5;
+      slot.options.push({ c: c.clone().add(V(0, dy, 0)), R, ok: it.name.includes('stop bar') ? !!k : 'stop', hole, stop: k,
+        msg: 'The stop bar goes in hole 13, 14 or 15 of the back column (A, B or C).' });
+    }
+    if (it.name.includes('stop bar')) stopSlot = slot;
+  }
+  slot.label = it.name === 'Collar' ? `Collar (${it.step === 5 ? 'pivot' : it.step === 6 ? 'stop bar' : 'arm'})` : it.name;
+  SLOTS.push(slot);
+}
+SLOTS.forEach((s, i) => s.i = i);
+const TOTAL = {}; SLOTS.forEach(s => TOTAL[s.key] = (TOTAL[s.key] || 0) + 1);
+
+// ---------- Materials and meshes ----------
+function partMesh(key) {
+  const m = new THREE.Mesh(L.geo(key), L.mat(L.KIND[key]));
+  m.matrixAutoUpdate = false; m.castShadow = true; m.receiveShadow = true; m.userData.key = key;
+  return m;
+}
+function poseMatrix(key, c, q) {   // put the middle of the part at c, turned by q
+  const M = new THREE.Matrix4().makeRotationFromQuaternion(q);
+  const off = LC[key].clone().applyQuaternion(q);
+  M.setPosition(c.clone().sub(off)); return M;
+}
+const buildG = new THREE.Group(); scene.add(buildG);
+
+// Snap rotations to exact quarter turns so checks are clean.
+function cleanQ(q) {
+  const m = new THREE.Matrix4().makeRotationFromQuaternion(q), e = m.elements;
+  for (const i of [0, 1, 2, 4, 5, 6, 8, 9, 10]) e[i] = Math.round(e[i]);
+  return new THREE.Quaternion().setFromRotationMatrix(m);
+}
+function facesRight(key, q, R) {
+  const a = new THREE.Matrix4().makeRotationFromQuaternion(q).elements, b = new THREE.Matrix4().makeRotationFromQuaternion(R).elements;
+  return KEYAX[key].every(([ax, signed]) => {
+    const d = a[ax * 4] * b[ax * 4] + a[ax * 4 + 1] * b[ax * 4 + 1] + a[ax * 4 + 2] * b[ax * 4 + 2];
+    return signed ? d > 0.9 : Math.abs(d) > 0.9;
+  });
+}
+
+// ---------- State ----------
+const state = { hand: null, sel: null, undo: [], dots: true, ghost: false };
+function place(slot, oi, q, noUndo) {
+  const o = slot.options[oi];
+  const m = partMesh(slot.key); m.matrix.copy(poseMatrix(slot.key, o.c, q)); m.userData.slot = slot;
+  if (state.ghost) setGhost(m, true);
+  buildG.add(m);
+  slot.filled = { oi, q: q.clone(), mesh: m };
+  if (!noUndo) state.undo.push({ t: 'place', i: slot.i });
+  changed();
+}
+function unplace(slot, noUndo) {
+  const f = slot.filled; if (!f) return;
+  buildG.remove(f.mesh);
+  if (!noUndo) state.undo.push({ t: 'remove', i: slot.i, oi: f.oi, q: f.q.toArray() });
+  slot.filled = null; changed();
+}
+function changed() {
+  const n = SLOTS.filter(s => s.filled).length;
+  $('meter').style.width = (100 * n / SLOTS.length).toFixed(1) + '%';
+  $('count').textContent = `${n} of ${SLOTS.length} parts placed`;
+  renderLib();
+  store.set(SAVE_KEY, SLOTS.filter(s => s.filled).map(s => [s.i, s.filled.oi, s.filled.q.toArray().map(v => +v.toFixed(4))]));
+  // Any change means the build has to pass the check again before it can launch.
+  store.del(BUILD_KEY); $('doneBox').hidden = true;
+  buildG.children.forEach(m => tintBad(m, false));
+}
+function used(key) { return SLOTS.filter(s => s.key === key && s.filled).length; }
+
+// ---------- Parts library ----------
+const THUMB = {};
+function makeThumbs() {
+  const c = document.createElement('canvas'); c.width = 192; c.height = 144;
+  const r = new THREE.WebGLRenderer({ canvas: c, antialias: true, alpha: true, preserveDrawingBuffer: true });
+  r.toneMapping = THREE.ACESFilmicToneMapping;
+  const s = new THREE.Scene(); s.environment = new THREE.PMREMGenerator(r).fromScene(new RoomEnvironment(), 0.04).texture;
+  s.add(new THREE.HemisphereLight(0xffffff, 0x8a8f99, 0.7)); const d = new THREE.DirectionalLight(0xffffff, 1.4); d.position.set(3, 5, 4); s.add(d);
+  const cam = new THREE.PerspectiveCamera(30, 4 / 3, 0.01, 100);
+  for (const k of LIB_ORDER) {
+    const m = new THREE.Mesh(L.geo(k), L.mat(L.KIND[k])); s.add(m);
+    const box = new THREE.Box3().setFromObject(m), ctr = box.getCenter(V()), size = box.getSize(V()).length();
+    cam.position.copy(ctr).add(V(0.8, 0.65, 1).normalize().multiplyScalar(size * 1.55)); cam.lookAt(ctr);
+    r.render(s, cam); THUMB[k] = c.toDataURL('image/png'); s.remove(m);
+  }
+  r.dispose();
+}
+function renderLib() {
+  const lib = $('lib');
+  if (!lib.children.length) {
+    for (const k of LIB_ORDER) {
+      const b = document.createElement('button'); b.dataset.k = k;
+      b.innerHTML = `<img alt="" src="${THUMB[k] || ''}"><div><b>${NAMES[k]}</b><span class="left"></span></div>`;
+      b.onclick = () => pickUp(k, new THREE.Quaternion());
+      lib.appendChild(b);
+    }
+  }
+  for (const b of lib.children) {
+    const k = b.dataset.k, left = TOTAL[k] - used(k);
+    b.querySelector('.left').textContent = left ? `${left} left` : 'All used';
+    b.disabled = left === 0; b.classList.toggle('on', state.hand?.key === k);
+  }
+}
+
+// ---------- Holding a part ----------
+const handMat = new THREE.MeshStandardMaterial({ color: 0x2b7de9, transparent: true, opacity: 0.6, depthWrite: false, metalness: 0.3, roughness: 0.5 });
+const handMesh = new THREE.Mesh(new THREE.BufferGeometry(), handMat); handMesh.matrixAutoUpdate = false; handMesh.visible = false; handMesh.renderOrder = 5; scene.add(handMesh);
+const dotG = new THREE.Group(); scene.add(dotG);
+const dotGeo = new THREE.SphereGeometry(0.09, 12, 8), dotMat = new THREE.MeshBasicMaterial({ color: 0x2b7de9, depthTest: false, transparent: true, opacity: 0.85 });
+
+function pickUp(key, q) {
+  if (TOTAL[key] - used(key) <= 0) return;
+  deselect();
+  state.hand = { key, q: cleanQ(q), target: null };
+  handMesh.geometry = L.geo(key); handMesh.visible = false;
+  $('handBar').hidden = false; renderLib(); showDots();
+  status(`Holding a ${NAMES[key]}. Move it over the build and click a dot to place it.`);
+}
+function drop() {
+  state.hand = null; handMesh.visible = false; $('handBar').hidden = true; dotG.clear(); renderLib();
+  status('Pick the next part from the library.');
+}
+function candidates() {
+  const out = [];
+  for (const s of SLOTS) if (s.key === state.hand.key && !s.filled) s.options.forEach((o, oi) => out.push({ s, oi, o }));
+  return out;
+}
+function showDots() {
+  dotG.clear(); if (!state.hand || !state.dots) return;
+  const seen = [];
+  for (const { o } of candidates()) {
+    if (seen.some(p => p.distanceTo(o.c) < 0.05)) continue; seen.push(o.c);
+    const d = new THREE.Mesh(dotGeo, dotMat); d.position.copy(o.c); d.renderOrder = 6; dotG.add(d);
+  }
+}
+function turn(axis) {
+  if (!state.hand) return;
+  state.hand.q = cleanQ(new THREE.Quaternion().setFromAxisAngle(axis, Math.PI / 2).multiply(state.hand.q));
+  updateHand();
+}
+const ptr = new THREE.Vector2(), ray = new THREE.Raycaster(); let lastPtr = null;
+function toScreen(p) { const v = p.clone().project(camera); return [(v.x + 1) / 2 * view.clientWidth, (1 - v.y) / 2 * view.clientHeight, v.z]; }
+function updateHand() {
+  const h = state.hand; if (!h || !lastPtr) return;
+  let best = null, bd = 60;
+  for (const c of candidates()) {
+    const [x, y, z] = toScreen(c.o.c); if (z > 1) continue;
+    const d = Math.hypot(x - lastPtr[0], y - lastPtr[1]) + z * 0.5;
+    if (d < bd) { bd = d; best = c; }
+  }
+  h.target = best;
+  if (best) { handMesh.matrix.copy(poseMatrix(h.key, best.o.c, h.q)); handMat.color.set(0x2b7de9); }
+  else {   // float over the floor under the pointer
+    ptr.set(lastPtr[0] / view.clientWidth * 2 - 1, -(lastPtr[1] / view.clientHeight) * 2 + 1); ray.setFromCamera(ptr, camera);
+    const p = new THREE.Vector3(); if (!ray.ray.intersectPlane(new THREE.Plane(V(0, 1, 0), -1.5), p)) return;
+    handMesh.matrix.copy(poseMatrix(h.key, p, h.q)); handMat.color.set(0x8a96a3);
+  }
+  handMesh.visible = true;
+}
+
+// ---------- Selecting placed parts ----------
+function setGhost(m, on) { const metal = m.material.userData.base === L.COLORS.metal; if (!metal) return; m.material.transparent = on; m.material.opacity = on ? 0.3 : 1; m.material.depthWrite = !on; }
+function tintBad(m, on) { m.material.emissive.set(on ? 0xd02a1a : 0x000000); m.material.emissiveIntensity = on ? 0.55 : 0; }
+function select(slot) {
+  deselect(); state.sel = slot; slot.filled.mesh.material.emissive.set(0x2b7de9); slot.filled.mesh.material.emissiveIntensity = 0.45;
+  $('selBar').hidden = false; status(`${slot.label}: pick it up to move it, or remove it.`);
+}
+function deselect() { if (state.sel?.filled) tintBad(state.sel.filled.mesh, false); state.sel = null; $('selBar').hidden = true; }
+$('sMove').onclick = () => { const s = state.sel; if (!s) return; const q = s.filled.q; deselect(); unplace(s); pickUp(s.key, q); };
+$('sDel').onclick = () => { const s = state.sel; if (!s) return; deselect(); unplace(s); status('Removed. It is back in the library.'); };
+$('sDone').onclick = () => { deselect(); status('Pick the next part from the library.'); };
+
+// ---------- Pointer ----------
+let downAt = null;
+canvas.addEventListener('pointerdown', e => { downAt = [e.clientX, e.clientY]; });
+canvas.addEventListener('pointermove', e => {
+  const r = canvas.getBoundingClientRect(); lastPtr = [e.clientX - r.left, e.clientY - r.top];
+  if (state.hand) updateHand();
+});
+canvas.addEventListener('pointerup', e => {
+  if (!downAt || Math.hypot(e.clientX - downAt[0], e.clientY - downAt[1]) > 6) { downAt = null; return; }
+  downAt = null;
+  const r = canvas.getBoundingClientRect(); lastPtr = [e.clientX - r.left, e.clientY - r.top];
+  if (state.hand) {
+    updateHand();
+    const t = state.hand.target;
+    if (!t) { status('Move it onto one of the blue dots to place it.', 'bad'); return; }
+    const key = state.hand.key, q = state.hand.q;
+    place(t.s, t.oi, q);
+    if (TOTAL[key] - used(key) > 0) { showDots(); updateHand(); status(`Placed. Click another dot for the next ${NAMES[key]}, or press Esc.`); }
+    else { drop(); status(`All the ${NAMES[key]} parts are placed.`); }
+    return;
+  }
+  ptr.set(lastPtr[0] / view.clientWidth * 2 - 1, -(lastPtr[1] / view.clientHeight) * 2 + 1); ray.setFromCamera(ptr, camera);
+  const hit = ray.intersectObjects(buildG.children, false)[0];
+  if (hit) select(hit.object.userData.slot); else deselect();
+});
+
+// ---------- Buttons and keys ----------
+$('hTurn').onclick = () => turn(V(0, 1, 0));
+$('hTilt').onclick = () => turn(V(1, 0, 0));
+$('hFlip').onclick = () => turn(V(0, 0, 1));
+$('hStop').onclick = drop;
+$('undo').onclick = () => {
+  const u = state.undo.pop(); if (!u) return; deselect();
+  const s = SLOTS[u.i];
+  if (u.t === 'place') unplace(s, true); else place(s, u.oi, new THREE.Quaternion().fromArray(u.q), true);
+  if (state.hand) showDots();
+  status('Undone.');
+};
+let clearArm = 0;
+$('clear').onclick = () => {
+  if (Date.now() - clearArm > 3000) { clearArm = Date.now(); $('clear').textContent = 'Click again to clear'; setTimeout(() => $('clear').textContent = 'Start over', 3000); return; }
+  clearArm = 0; $('clear').textContent = 'Start over';
+  drop(); deselect(); SLOTS.forEach(s => s.filled && unplace(s, true)); state.undo = []; $('issues').innerHTML = ''; status('Cleared. Start with the spine.');
+};
+$('tDots').onclick = e => { state.dots = !state.dots; e.currentTarget.classList.toggle('on', state.dots); e.currentTarget.setAttribute('aria-pressed', state.dots); showDots(); };
+$('tGhost').onclick = e => { state.ghost = !state.ghost; e.currentTarget.classList.toggle('on', state.ghost); e.currentTarget.setAttribute('aria-pressed', state.ghost); buildG.children.forEach(m => setGhost(m, state.ghost)); };
+window.addEventListener('keydown', e => {
+  if (e.target.closest && e.target.closest('input,textarea')) return;
+  const k = e.key.toLowerCase();
+  if ((e.ctrlKey || e.metaKey) && k === 'z') { e.preventDefault(); $('undo').click(); return; }
+  if (k === 'r') turn(V(0, 1, 0));
+  else if (k === 't') turn(V(1, 0, 0));
+  else if (k === 'f') turn(V(0, 0, 1));
+  else if (k === 'escape') { if (state.hand) drop(); else deselect(); }
+  else if ((k === 'delete' || k === 'backspace') && state.sel) { e.preventDefault(); $('sDel').click(); }
+});
+const HOME = [V(0.5, 3.6, 0), V(13, 11, 19)];
+function setCam(t, p) { const k = Math.max(1, 1.25 / camera.aspect); controls.target.copy(t); camera.position.copy(t).add(p.clone().multiplyScalar(k)); }
+$('home').onclick = () => setCam(HOME[0], HOME[1]);
+$('zin').onclick = () => camera.position.lerp(controls.target, 0.2);
+$('zout').onclick = () => camera.position.sub(controls.target).multiplyScalar(1.25).add(controls.target);
+
+function status(t, cls) { const s = $('status'); s.textContent = t; s.className = cls || ''; }
+
+// ---------- Check my build ----------
+function hash(s) { let h = 2166136261; for (const c of s) { h ^= c.charCodeAt(0); h = Math.imul(h, 16777619); } return (h >>> 0).toString(36).toUpperCase().slice(-4).padStart(4, '0'); }
+function check() {
+  drop(); deselect();
+  const issues = [], missing = {};
+  buildG.children.forEach(m => tintBad(m, false));
+  const stopF = stopSlot.filled, stopHole = stopF ? stopSlot.options[stopF.oi].hole : null, stop = stopF ? stopSlot.options[stopF.oi].stop : null;
+  for (const s of SLOTS) {
+    if (!s.filled) { missing[s.key] = (missing[s.key] || 0) + 1; continue; }
+    const o = s.options[s.filled.oi];
+    let bad = null;
+    if (o.ok === false) bad = o.msg;
+    else if (o.ok === 'stop' && o.hole !== stopHole) bad = stopHole ? `A stop bar collar is not on the stop bar's hole (${stopHole}).` : 'There is a stop bar collar with no stop bar.';
+    if (!bad && !facesRight(s.key, s.filled.q, o.R)) bad = `${s.label} is turned the wrong way. ${TURN_HINT[s.name] || 'Turn it with R, T or F.'}`;
+    if (bad) { tintBad(s.filled.mesh, true); if (!issues.includes(bad)) issues.push(bad); }
+  }
+  for (const [k, n] of Object.entries(missing)) issues.push(`Still missing: ${n} × ${NAMES[k]}.`);
+  const ul = $('issues'); ul.innerHTML = '';
+  if (!issues.length) {
+    const code = `V5C-${stop}-${hash('catapult|' + stop)}`;
+    store.set(BUILD_KEY, { v: 1, stop, code, at: Date.now() });
+    $('code').textContent = code; $('doneBox').hidden = false;
+    ul.innerHTML = `<li class="good">Everything is in the right place. Stop bar in hole ${stopHole} (${stop}).</li>`;
+    status('Your launcher passes the check!', 'good');
+  } else {
+    issues.slice(0, 8).forEach(t => { const li = document.createElement('li'); li.textContent = t; ul.appendChild(li); });
+    if (issues.length > 8) { const li = document.createElement('li'); li.className = 'info'; li.textContent = `…and ${issues.length - 8} more. Fix these first.`; ul.appendChild(li); }
+    $('doneBox').hidden = true;
+    const red = buildG.children.some(m => m.material.emissiveIntensity > 0.5);
+    status(red ? 'Red parts need to move or turn. See the list on the right.' : 'No mistakes so far. Keep going: some parts are still missing.', red ? 'bad' : '');
+  }
+}
+$('check').onclick = check;
+
+// ---------- Loop ----------
+function resize() { const w = view.clientWidth, h = view.clientHeight; renderer.setSize(w, h, false); camera.aspect = w / Math.max(1, h); camera.updateProjectionMatrix(); }
+new ResizeObserver(resize).observe(view); resize();
+function frame() { controls.update(); renderer.render(scene, camera); requestAnimationFrame(frame); }
+
+makeThumbs();
+renderLib();
+setCam(HOME[0], HOME[1]);
+// Pick up where you left off on this computer.
+const saved = store.get(SAVE_KEY);
+const hadBuild = store.get(BUILD_KEY);
+if (Array.isArray(saved)) for (const [i, oi, q] of saved) if (SLOTS[i] && SLOTS[i].options[oi]) place(SLOTS[i], oi, new THREE.Quaternion().fromArray(q), true);
+changed();
+if (hadBuild && Array.isArray(saved) && saved.length === SLOTS.length) check();
+status(SLOTS.some(s => s.filled) ? 'Welcome back. Your build was saved on this computer.' : 'Start with the spine: click the U-channel in the library.');
+requestAnimationFrame(frame);
+window.__builder = { SLOTS, place, check, pickUp, turn, state, camera, controls, renderer, scene, facesRight, setCam };
+</script>
+</body>
+</html>
