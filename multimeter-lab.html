@@ -1,0 +1,719 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Multimeter Troubleshooting Lab</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:wght@400;700&family=Lexend:wght@500;700&family=Share+Tech+Mono&display=swap">
+<style>
+/* Board on the left, meter + lab panel on the right (stacks on phones). Same look as the Catapult labs. */
+:root{
+  --bg:#eef0f2; --panel:#ffffff; --ink:#17212b; --muted:#56616d; --line:#d3dae1;
+  --accent:#c4501a; --accent-ink:#ffffff; --accent-soft:#fbe8dd;
+  --chip:#f2f5f7; --good:#1d7a46; --good-soft:#dcf2e4; --bad:#b3261e; --bad-soft:#fbe3e1;
+  --wood:#ecd9b4; --wood-edge:#8a6438; --trace:#3a3f45; --post:#c62828; --post-com:#15181b;
+  --tplabel:#0d47a1; --jumper:#6a1b9a; --meter:#f2b705; --meter-ink:#1d1d1d; --lcd:#c9d6b8; --lcd-ink:#1d2a14;
+  --display:"Lexend","Segoe UI",system-ui,sans-serif;
+  --body:"Atkinson Hyperlegible","Segoe UI",system-ui,sans-serif;
+  --mono:"Share Tech Mono",ui-monospace,Menlo,Consolas,monospace;
+}
+@media (prefers-color-scheme: dark){ :root:not([data-theme="light"]){
+  --bg:#111519; --panel:#1a2027; --ink:#e6edf3; --muted:#9ba8b5; --line:#2d3742;
+  --accent:#ff9a5c; --accent-ink:#2a1206; --accent-soft:#3a2518;
+  --chip:#222a33; --good:#6fd39a; --good-soft:#163525; --bad:#ff8a80; --bad-soft:#3d1c1a;
+  --wood:#5a4a33; --wood-edge:#c49a62; --trace:#e9e2d4; --post:#ef5350; --post-com:#0a0a0a;
+  --tplabel:#9cc4ff; --jumper:#ce93d8; --lcd:#b5c4a2; color-scheme:dark;
+}}
+:root[data-theme="dark"]{
+  --bg:#111519; --panel:#1a2027; --ink:#e6edf3; --muted:#9ba8b5; --line:#2d3742;
+  --accent:#ff9a5c; --accent-ink:#2a1206; --accent-soft:#3a2518;
+  --chip:#222a33; --good:#6fd39a; --good-soft:#163525; --bad:#ff8a80; --bad-soft:#3d1c1a;
+  --wood:#5a4a33; --wood-edge:#c49a62; --trace:#e9e2d4; --post:#ef5350; --post-com:#0a0a0a;
+  --tplabel:#9cc4ff; --jumper:#ce93d8; --lcd:#b5c4a2; color-scheme:dark;
+}
+[hidden]{display:none!important}
+html,body{margin:0}
+body{background:var(--bg);color:var(--ink);font-family:var(--body);font-size:16px;line-height:1.45}
+button,input,select{font:inherit;color:inherit}
+.app{box-sizing:border-box;display:grid;grid-template-columns:minmax(0,1fr) 380px;grid-template-areas:'head head' 'board meter' 'tools meter';align-items:start;gap:12px;padding:12px max(16px,env(safe-area-inset-right,0px)) 16px max(16px,env(safe-area-inset-left,0px));max-width:1500px;margin:0 auto}
+header{grid-area:head;display:flex;flex-wrap:wrap;align-items:center;gap:8px 16px}
+.brand{margin-right:auto;min-width:0}
+.brand h1{font-family:var(--display);font-weight:700;font-size:22px;margin:0}
+.brand p{margin:0;color:var(--muted);font-size:14px}
+.brand a{color:var(--accent)}
+.btn{border:1px solid var(--line);background:var(--panel);border-radius:10px;padding:6px 12px;cursor:pointer;font-weight:700;font-size:15px;display:inline-flex;align-items:center;justify-content:center;gap:6px;min-height:38px}
+.btn:hover:not(:disabled){border-color:var(--accent)}
+.btn:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
+.btn.primary{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
+.btn.on{background:var(--accent-soft);border-color:var(--accent)}
+.btn.small{min-height:32px;padding:3px 9px;font-size:14px}
+.view{grid-area:board;border-radius:14px;border:1px solid var(--line);background:var(--panel);display:flex;flex-direction:column;min-width:0;overflow:hidden}
+.status{padding:9px 14px;border-bottom:1px solid var(--line);font-weight:700;min-height:24px}
+.status.warn{background:var(--bad-soft);color:var(--bad)}
+.boardwrap{overflow-x:auto}
+svg#board{display:block;width:100%;min-width:640px;height:auto;user-select:none;-webkit-user-select:none}
+#board .hit{cursor:pointer}
+#board .hit:focus{outline:none}
+#board .hit:focus-visible .ring{stroke:var(--accent);stroke-width:4}
+.legend{display:flex;flex-wrap:wrap;gap:6px 16px;padding:8px 14px;border-top:1px solid var(--line);font-size:14px;color:var(--muted)}
+.legend b{color:var(--ink)}
+.meterpanel{grid-area:meter;position:sticky;top:12px}
+.tools{grid-area:tools}
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:14px;display:flex;flex-direction:column;gap:14px;min-width:0}
+.panel h2{font-family:var(--display);font-size:13px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);margin:0 0 6px;font-weight:500}
+/* meter */
+.meter{display:grid;gap:10px}
+#meterSvg{width:100%;max-width:330px;margin:0 auto;display:block;user-select:none;-webkit-user-select:none}
+#meterSvg .hit{cursor:pointer}
+#meterSvg .hit:focus{outline:none}
+#meterSvg .hit:focus-visible .ring{stroke:var(--accent);stroke-width:5}
+.meter .hint{font-size:14px;line-height:1.35;background:var(--chip);border:1px solid var(--line);border-radius:10px;padding:8px 10px}
+.probes{display:grid;grid-template-columns:1fr 1fr;gap:6px}
+.probe{border-radius:10px;border:2px solid transparent;padding:6px 8px;font-weight:700;cursor:pointer;text-align:left;min-height:46px;color:#fff;font-size:14px;line-height:1.2}
+.probe small{display:block;font-weight:400;font-size:12px;opacity:.9}
+.probe.r{background:#c62828}.probe.b{background:#222;border-color:#666}
+.probe.sel{border-color:#fff;box-shadow:0 0 0 3px var(--accent)}
+.tabs{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px;max-width:620px}
+.tabs .btn{min-height:40px;font-size:14px}
+.rows{display:flex;flex-direction:column;gap:8px}
+.row{display:flex;flex-wrap:wrap;gap:6px;align-items:center}
+.row label{min-width:110px;font-weight:700;font-size:14px}
+.row select,.row input[type=number]{flex:1;min-width:0;border:1px solid var(--line);border-radius:8px;background:var(--chip);padding:5px 8px;min-height:34px;font-size:14px}
+.row input[type=range]{flex:1;min-width:120px;accent-color:var(--accent)}
+.out{font-family:var(--mono);font-size:15px;background:var(--chip);border:1px solid var(--line);border-radius:8px;padding:6px 8px;word-break:break-all}
+.note{font-size:14px;color:var(--muted);margin:0}
+.msg{border-radius:10px;padding:8px 10px;font-weight:700;font-size:14px}
+.msg.good{background:var(--good-soft);color:var(--good)}
+.msg.bad{background:var(--bad-soft);color:var(--bad)}
+.msg.mid{background:var(--accent-soft);color:var(--ink)}
+table{width:100%;border-collapse:collapse;font-size:13px;font-variant-numeric:tabular-nums}
+th,td{border-bottom:1px solid var(--line);padding:4px 4px;text-align:left;vertical-align:top}
+th{color:var(--muted);font-weight:700}
+.tbl{max-height:320px;overflow:auto}
+.presets{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:6px}
+.presets .btn{font-size:13px;min-height:34px;justify-content:flex-start;text-align:left}
+details summary{cursor:pointer;font-weight:700}
+.fsum{font-size:14px;margin:0;padding-left:18px}
+@media (max-width:980px){ .app{grid-template-columns:minmax(0,1fr);grid-template-areas:'head' 'board' 'meter' 'tools'} .meterpanel{position:static} }
+@media (prefers-reduced-motion: reduce){ *{transition:none!important} }
+</style>
+</head>
+<body>
+<div class="app">
+  <header>
+    <div class="brand">
+      <h1>Multimeter Troubleshooting Lab</h1>
+      <p>Measure voltage, current, and resistance on a virtual trainer board, then find the hidden fault. <a href="index.html">← All class pages</a></p>
+    </div>
+    <span id="scenarioTag" class="btn small" hidden></span>
+  </header>
+
+  <section class="view" aria-label="Trainer board">
+    <div id="status" class="status" role="status"></div>
+    <div class="boardwrap"><svg id="board" viewBox="0 0 900 480" aria-label="Trainer board with test points, switches, bulbs and jumpers"></svg></div>
+    <div class="legend">
+      <span><b>Tap a red post</b> to place the selected probe</span>
+      <span><b>Tap a switch</b> to flip it</span>
+      <span><b>Tap a purple jumper</b> to pull it out (put the ammeter there)</span>
+      <span><b>Tap a bulb</b> to move it to the test bench</span>
+    </div>
+  </section>
+
+  <aside class="panel meterpanel" aria-label="Multimeter">
+    <div class="meter" aria-label="Digital multimeter">
+      <svg id="meterSvg" viewBox="0 0 470 860" role="group" aria-label="7-function digital multimeter. Click a dial label to turn the knob, click a jack to move the red lead, click OFF/ON to power it."></svg>
+      <div class="hint" id="meterHint"></div>
+      <div class="probes">
+        <button class="probe r" id="probeR" type="button">Red probe<small id="probeRAt"></small></button>
+        <button class="probe b" id="probeB" type="button">Black probe<small id="probeBAt"></small></button>
+      </div>
+      <div class="row" style="justify-content:space-between">
+        <button class="btn small" id="liftBtn" type="button">Lift both probes</button>
+        <button class="btn small primary" id="logBtn" type="button">Record reading</button>
+      </div>
+    </div>
+
+  </aside>
+
+  <section class="panel tools" aria-label="Readings, diagnosis and teacher setup">
+    <div class="tabs" role="tablist">
+      <button class="btn on" data-tab="log" type="button">My readings</button>
+      <button class="btn" data-tab="diag" type="button">Find the fault</button>
+      <button class="btn" data-tab="teach" type="button" id="teachTabBtn">Teacher setup</button>
+    </div>
+
+    <div id="tab-log" class="rows">
+      <div class="tbl"><table><thead><tr><th>#</th><th>Mode</th><th>Red</th><th>Black</th><th>Reading</th><th>Switches</th></tr></thead><tbody id="logBody"><tr><td colspan="6" class="note">No readings yet. Place both probes and press <b>Record reading</b>.</td></tr></tbody></table></div>
+      <div class="row"><button class="btn small" id="copyLog" type="button">Copy readings</button><button class="btn small" id="clearLog" type="button">Clear</button><span class="note" id="copyMsg"></span></div>
+      <details><summary>How to use the meter</summary>
+        <ul class="note" style="padding-left:18px">
+          <li>Slide the meter to <b>ON</b>. This meter is <b>manual range</b>: you pick the range. The display shows <b>1</b> at the far left when the reading is over range, so turn up one range.</li>
+          <li><b>Volts:</b> DCV <b>20</b> fits this 6 V board. Red lead in VΩmA. Probe across a part with the power on.</li>
+          <li><b>Amps:</b> pull a jumper (J1–J4) and put the probes on its two posts. Use DCA <b>200m</b> with the red lead in <b>VΩmA</b> (200 mA max, it has a fuse). For J1 (about 0.4 A) use <b>5A</b> with the red lead in <b>5ADC</b>.</li>
+          <li><b>Ohms:</b> Ω <b>200</b>, red lead in VΩmA, <b>power off</b> (S1 OFF). Pull jumpers to cut off other paths. This meter has no beeper; a good connection reads close to 0.</li>
+          <li>Put a bulb on the test bench to check it by itself.</li>
+        </ul>
+      </details>
+    </div>
+
+    <div id="tab-diag" class="rows" hidden>
+      <p class="note" id="diagIntro"></p>
+      <div class="row"><label for="ansLoc">Where is it?</label><select id="ansLoc"></select></div>
+      <div class="row"><label for="ansType">What kind?</label><select id="ansType"></select></div>
+      <div class="row"><button class="btn primary" id="checkBtn" type="button">Check my answer</button><span class="note" id="tries"></span></div>
+      <div id="ansMsg" class="msg" hidden></div>
+      <div id="practiceBox" class="rows">
+        <h2 style="margin-top:6px">Practice</h2>
+        <p class="note">Load a random hidden fault to practice on. Your teacher can also give you a scenario code or link.</p>
+        <div class="row"><button class="btn small" id="practice1" type="button">Random fault</button><button class="btn small" id="practice2" type="button">Two random faults</button><button class="btn small" id="revealBtn" type="button">Show answer</button></div>
+        <div class="row"><label for="codeIn">Scenario code</label><input id="codeIn" class="out" style="flex:1;min-width:0" placeholder="MM-…"><button class="btn small" id="loadCode" type="button">Load</button></div>
+        <div id="reveal" class="msg mid" hidden></div>
+      </div>
+    </div>
+
+    <div id="tab-teach" class="rows" hidden>
+      <p class="note">Set up the hidden problems, test them on the board, then give students the code or link. Students using a link can't open this tab.</p>
+      <h2>Quick setups</h2>
+      <div class="presets" id="presets"></div>
+      <h2>Battery</h2>
+      <div class="row"><label for="tV">Voltage</label><input type="range" id="tV" min="0" max="12" step="0.1"><span class="out" id="tVout" style="min-width:64px;text-align:right"></span></div>
+      <div class="row"><label for="tR">Internal resistance</label><select id="tR"><option value="0.8">Fresh (0.8 Ω)</option><option value="3">Getting weak (3 Ω)</option><option value="10">Weak (10 Ω)</option><option value="25">Very weak (25 Ω)</option></select></div>
+      <h2>Switches</h2><div id="tSw" class="rows"></div>
+      <h2>Bulbs and sockets</h2><div id="tBulb" class="rows"></div>
+      <h2>Wires and connections</h2><div id="tSeg" class="rows"></div>
+      <h2>Student options</h2>
+      <div class="row"><input type="checkbox" id="tCheck"><label for="tCheck" style="min-width:0;font-weight:400">Students can check their answer on the page</label></div>
+      <div class="row"><input type="checkbox" id="tCount"><label for="tCount" style="min-width:0;font-weight:400">Tell students how many faults there are</label></div>
+      <h2>What's broken right now</h2>
+      <ul class="fsum" id="fsum"></ul>
+      <h2>Give this to students</h2>
+      <div class="out" id="codeOut"></div>
+      <div class="out" id="linkOut" style="font-size:13px"></div>
+      <div class="row"><button class="btn small" id="copyCode" type="button">Copy code</button><button class="btn small primary" id="copyLink" type="button">Copy student link</button><span class="note" id="copyMsg2"></span></div>
+    </div>
+  </section>
+</div>
+
+<script>
+(()=>{
+// ---------- constants ----------
+const NS='http://www.w3.org/2000/svg';
+const LAMPS={ok:{Vr:6.3,Ir:.15,Rc:4.2,stamp:'6.3V .15A'},blown:{open:true,stamp:'6.3V .15A'},'12v':{Vr:12,Ir:.1,Rc:10.5,stamp:'12V .1A'},'25v':{Vr:2.5,Ir:.3,Rc:.8,stamp:'2.5V .3A'}};
+const SEGS=[['bat','Battery lead (inside, to TP1)'],['sock1','L1 socket'],['w67','Wire TP6–TP7'],['w78','Splice TP7–TP8'],['sock2','L2 socket'],['sock3','L3 socket'],['w1112','Wire TP11–TP12'],['sock4','L4 socket']];
+const SWS=['S1','S2','S3'], BULBS=['L1','L2','L3','L4'], JUMPS=['J1','J2','J3','J4'];
+const P={TP1:[140,265],TP2:[280,265],TP3:[350,265],TP4:[490,105],TP5:[550,105],TP6:[670,105],TP7:[730,105],TP8:[810,105],TP9:[490,265],TP10:[490,325],TP11:[560,265],TP12:[630,265],COM:[140,435],BA:[85,110],BB:[235,110]};
+const LPOS={L1:[610,105],L2:[810,185],L3:[490,378],L4:[630,345]};
+const SWPOS={S1:[170,250,265],S2:[380,460,105],S3:[380,460,265]};
+const JPOS={J1:['TP2','TP3',0,-34],J2:['TP4','TP5',0,-30],J3:['TP9','TP10',-34,0],J4:['TP9','TP11',0,-32]};
+const SOCK={L1:['sock1','TP5','L1a','TP6'],L2:['sock2','TP8','L2a','COM'],L3:['sock3','TP10','L3a','COM'],L4:['sock4','TP12','L4a','COM']};
+const LOCS=[['battery','Battery'],['bat','Battery lead (to TP1)'],['S1','Switch S1'],['S2','Switch S2'],['S3','Switch S3'],['L1b','Bulb L1'],['sock1','L1 socket'],['L2b','Bulb L2'],['sock2','L2 socket'],['L3b','Bulb L3'],['sock3','L3 socket'],['L4b','Bulb L4'],['sock4','L4 socket'],['w67','Wire TP6–TP7'],['w78','Splice TP7–TP8'],['w1112','Wire TP11–TP12']];
+const TYPES=[['open','Open (broken path)'],['short','Short'],['highr','High resistance (bad connection)'],['noclose','Switch won\'t turn on'],['noopen','Switch won\'t turn off'],['source','Weak or dead battery'],['wrong','Wrong part']];
+
+// ---------- state ----------
+const DEF=()=>({V:6.3,Rint:.8,seg:Object.fromEntries(SEGS.map(s=>[s[0],0])),sw:{S1:'ok',S2:'ok',S3:'ok'},bulb:{L1:'ok',L2:'ok',L3:'ok',L4:'ok'},check:true,count:true});
+let cfg=DEF();
+const run={sw:{S1:true,S2:true,S3:true},jump:{J1:true,J2:true,J3:true,J4:true},sock:{},bench:null,ptcTrip:false,ptcCool:0,fuse:true,pos:2,on:true,jack:'vma',probe:{r:'TP1',b:'COM'},sel:'r',flash:null};
+let studentMode=false, scenarioCode=null, found=new Set(), tries=0, logRows=[], practice=false;
+function resetBulbs(){ for(const L of BULBS) run.sock[L]={home:L,kind:cfg.bulb[L]==='short'?'ok':cfg.bulb[L],burn:0}; run.bench=null; found=new Set(); tries=0; }
+
+// ---------- circuit ----------
+function lampR(t,V){ const d=LAMPS[t]; if(V<.05) return d.Rc; return Math.max(d.Rc,(d.Vr/d.Ir)*Math.pow(V/d.Vr,.45)); }
+function segR(v){ return v===0?0.02:(v<0?null:v); }
+function buildNet(meter){
+  // elements: [a,b,R,id]
+  const E=[], lamps=[];
+  const add=(a,b,R,id)=>{ if(R!=null) E.push({a,b,R,id}); };
+  add('BP','BF',run.ptcTrip?60:0.25,'F1');
+  add('BF','TP1',segR(cfg.seg.bat),'bat');
+  const swR=s=>{ const f=cfg.sw[s]; if(f==='open') return null; if(f==='closed') return .02; return run.sw[s]?.02:null; };
+  add('TP1','TP2',swR('S1'),'S1'); add('TP3','TP4',swR('S2'),'S2'); add('TP3','TP9',swR('S3'),'S3');
+  for(const j of JUMPS) if(run.jump[j]) add(JPOS[j][0],JPOS[j][1],.01,j);
+  add('TP6','TP7',segR(cfg.seg.w67),'w67'); add('TP7','TP8',segR(cfg.seg.w78),'w78'); add('TP11','TP12',segR(cfg.seg.w1112),'w1112');
+  for(const L of BULBS){
+    const [sg,top,mid,bot]=SOCK[L];
+    add(top,mid,segR(cfg.seg[sg]),sg);
+    if(cfg.bulb[L]==='short') add(mid,bot,.05,L+'short');
+    const b=run.sock[L];
+    if(b && b.kind!=='blown'){ const e={a:mid,b:bot,R:LAMPS[b.kind].Vr/LAMPS[b.kind].Ir,id:L,lamp:b}; E.push(e); lamps.push(e); }
+  }
+  if(run.bench && run.bench.kind!=='blown'){ const e={a:'BA',b:'BB',R:LAMPS[run.bench.kind].Rc,id:'bench',lamp:run.bench}; E.push(e); lamps.push(e); }
+  if(meter) E.push(meter);
+  return {E,lamps};
+}
+function solveLinear(E,src){ // src: [{node,I}] ; ground = COM
+  const names=new Set(); for(const e of E){names.add(e.a);names.add(e.b);} for(const s of src) names.add(s.node);
+  names.add('BP'); names.delete('COM');
+  const idx={}; let n=0; for(const k of names) idx[k]=n++;
+  const G=Array.from({length:n},()=>new Float64Array(n+1));
+  for(let i=0;i<n;i++) G[i][i]+=1e-9;
+  for(const e of E){ const g=1/e.R, a=idx[e.a], b=idx[e.b];
+    if(a!=null) G[a][a]+=g; if(b!=null) G[b][b]+=g; if(a!=null&&b!=null){G[a][b]-=g;G[b][a]-=g;} }
+  for(const s of src){ const i=idx[s.node]; if(i!=null) G[i][n]+=s.I; }
+  for(let c=0;c<n;c++){ let p=c; for(let r=c+1;r<n;r++) if(Math.abs(G[r][c])>Math.abs(G[p][c])) p=r; [G[c],G[p]]=[G[p],G[c]];
+    const d=G[c][c]; if(Math.abs(d)<1e-30) continue;
+    for(let r=0;r<n;r++){ if(r===c) continue; const f=G[r][c]/d; if(f) for(let k=c;k<=n;k++) G[r][k]-=f*G[c][k]; } }
+  const V={COM:0}; for(const k in idx){ const i=idx[k]; V[k]=G[i][n]/G[i][i]; } return V;
+}
+function solve(meter){
+  const {E,lamps}=buildNet(meter);
+  E.push({a:'BP',b:'COM',R:cfg.Rint,id:'Rint'});
+  const src=[{node:'BP',I:cfg.V/cfg.Rint}];
+  let V; for(let it=0;it<60;it++){ V=solveLinear(E,src);
+    let ch=0; for(const e of lamps){ if(e.id==='bench') continue; const dv=Math.abs((V[e.a]||0)-(V[e.b]||0)); const Rn=lampR(e.lamp.kind,dv); ch=Math.max(ch,Math.abs(Rn-e.R)/e.R); e.R=0.5*e.R+0.5*Rn; }
+    if(ch<1e-5) break; }
+  const cur=e=>((V[e.a]||0)-(V[e.b]||0))/e.R;
+  return {V,E,lamps,cur,ptcI:Math.abs(cur(E.find(e=>e.id==='F1')))};
+}
+function ohms(rn,bn,lampR0){ // Thevenin resistance seen by the meter, battery off
+  const {E,lamps}=buildNet(null);
+  for(const e of lamps){ if(e.id==='bench') continue; e.R=lampR0[e.id]||LAMPS[e.lamp.kind].Rc; }
+  E.push({a:'BP',b:'COM',R:cfg.Rint,id:'Rint'});
+  const V=solveLinear(E,[{node:rn,I:1e-3},{node:bn,I:-1e-3}]);
+  return ((V[rn]||0)-(V[bn]||0))/1e-3;
+}
+
+// ---------- drawing ----------
+const svg=document.getElementById('board');
+function el(tag,attrs,parent){ const e=document.createElementNS(NS,tag); for(const k in attrs) e.setAttribute(k,attrs[k]); (parent||svg).appendChild(e); return e; }
+function txt(x,y,s,attrs={},parent){ const t=el('text',Object.assign({x,y,'font-family':'Lexend, sans-serif','font-size':13,fill:'var(--trace)','text-anchor':'middle'},attrs),parent); t.textContent=s; return t; }
+function line(pts,parent,extra={}){ return el('polyline',Object.assign({points:pts.map(p=>p.join(',')).join(' '),fill:'none',stroke:'var(--trace)','stroke-width':4,'stroke-linejoin':'round','stroke-linecap':'round'},extra),parent); }
+let G={};
+function drawStatic(){
+  svg.innerHTML='';
+  el('rect',{x:2,y:2,width:896,height:476,rx:10,fill:'var(--wood)',stroke:'var(--wood-edge)','stroke-width':3});
+  const g=el('g',{});
+  // traces
+  line([[115,265],[P.TP1[0],265]],g); line([[70,300],[70,435],[810,435]],g);
+  line([[P.TP1[0],265],[SWPOS.S1[0],265]],g); line([[SWPOS.S1[1],265],[P.TP2[0],265]],g);
+  line([[P.TP3[0],265],[380,265]],g); line([[P.TP3[0],265],[350,105],[380,105]],g);
+  line([[460,105],[P.TP4[0],105]],g); line([[P.TP5[0],105],[582,105]],g); line([[638,105],[P.TP6[0],105]],g);
+  line([[P.TP6[0],105],[P.TP7[0],105]],g); line([[P.TP7[0],105],[P.TP8[0],105]],g); line([[810,105],[810,157]],g); line([[810,213],[810,435]],g);
+  line([[460,265],[P.TP9[0],265]],g); line([[P.TP11[0],265],[P.TP12[0],265],[630,317]],g); line([[630,373],[630,435]],g); line([[490,406],[490,435]],g); line([[490,325],[490,350]],g);
+  txt(700,94,'WIRE',{'font-size':11,opacity:.8},g); txt(770,94,'SPLICE',{'font-size':11,opacity:.8},g); txt(595,254,'WIRE',{'font-size':11,opacity:.8},g);
+  txt(470,45,'SERIES CIRCUIT',{'font-weight':700,'font-size':15,'text-anchor':'start',opacity:.75},g);
+  txt(645,418,'PARALLEL CIRCUIT',{'font-weight':700,'font-size':13,'text-anchor':'start',opacity:.75},g);
+  txt(25,200,'POWER',{'font-weight':700,'font-size':15,'text-anchor':'start',opacity:.75},g);
+  txt(250,463,'COMMON (−) RETURN',{'font-size':12,'text-anchor':'start',opacity:.75},g);
+  // battery box
+  el('rect',{x:25,y:215,width:90,height:85,rx:6,fill:'var(--panel)','fill-opacity':.55,stroke:'var(--trace)','stroke-dasharray':'6 4'},g);
+  txt(70,245,'BATTERY',{'font-weight':700,'font-size':12},g); txt(70,262,'4×AA',{'font-size':12},g); txt(70,278,'(inside)',{'font-size':11,opacity:.75},g);
+  G.ptc=txt(70,293,'',{'font-size':10,fill:'var(--bad)','font-weight':700},g);
+  // bench
+  el('rect',{x:20,y:18,width:300,height:140,rx:8,fill:'var(--panel)','fill-opacity':.45,stroke:'var(--trace)','stroke-dasharray':'6 4'},g);
+  txt(32,40,'TEST BENCH',{'font-weight':700,'font-size':13,'text-anchor':'start',opacity:.85},g);
+  txt(32,58,'Bulbs you take out go here. Probe A and B.',{'font-size':11,'text-anchor':'start',opacity:.75},g);
+  line([[P.BA[0],110],[135,110]],g,{'stroke-width':3}); line([[185,110],[P.BB[0],110]],g,{'stroke-width':3});
+  G.benchG=el('g',{},g);
+  // switches
+  G.sw={};
+  for(const s of SWS){ const [x1,x2,y]=SWPOS[s]; const h=el('g',{class:'hit',tabindex:0,role:'button','aria-label':'Switch '+s},g);
+    el('rect',{x:x1,y:y-17,width:x2-x1,height:34,rx:4,fill:'#cfd8dc',stroke:'#333',class:'ring'},h);
+    el('circle',{cx:x1+10,cy:y,r:5,fill:'#b07a2a'},h); el('circle',{cx:x2-10,cy:y,r:5,fill:'#b07a2a'},h);
+    const lev=el('line',{x1:x1+10,y1:y,x2:x2-12,y2:y,stroke:'#9a6a20','stroke-width':6,'stroke-linecap':'round'},h);
+    const lab=txt((x1+x2)/2,y+32,s,{'font-weight':700,'font-size':14},h);
+    const st=txt((x1+x2)/2,y-22,'',{'font-size':11,'font-weight':700},h);
+    h.addEventListener('click',()=>{ run.sw[s]=!run.sw[s]; update(); }); key(h);
+    G.sw[s]={lev,st,x1,x2,y}; }
+  // bulbs
+  G.bulb={};
+  for(const L of BULBS){ const [x,y]=LPOS[L]; const h=el('g',{class:'hit',tabindex:0,role:'button','aria-label':'Bulb '+L},g);
+    el('circle',{cx:x,cy:y,r:30,fill:'#fdfbf3',stroke:'#333','stroke-width':2,class:'ring'},h);
+    const glow=el('circle',{cx:x,cy:y,r:26,fill:'#ffd54f',opacity:0},h);
+    const glass=el('circle',{cx:x,cy:y,r:16,fill:'#fff8e1',stroke:'#777','stroke-width':1.5},h);
+    const fil=el('path',{d:`M${x-8},${y+4} q4,-12 8,0 q4,-12 8,0`,fill:'none',stroke:'#555','stroke-width':1.6},h);
+    const empty=txt(x,y+4,'empty',{'font-size':10,opacity:.7},h);
+    const lx=L==='L3'?x-44:L==='L1'?x:x+44; txt(lx,L==='L1'?y+50:y+5,L,{'font-weight':700,'font-size':15},h);
+    h.addEventListener('click',()=>toggleBulb(L)); key(h);
+    G.bulb[L]={glow,glass,fil,empty}; }
+  // jumpers
+  G.j={};
+  for(const j of JUMPS){ const [a,b,dx,dy]=JPOS[j]; const [x1,y1]=P[a],[x2,y2]=P[b]; const cx=(x1+x2)/2+dx, cy=(y1+y2)/2+dy;
+    const h=el('g',{class:'hit',tabindex:0,role:'button','aria-label':'Jumper '+j},g);
+    el('path',{d:`M${x1},${y1} Q${cx},${cy} ${x2},${y2}`,stroke:'transparent','stroke-width':22,fill:'none'},h);
+    const p=el('path',{d:`M${x1},${y1} Q${cx},${cy} ${x2},${y2}`,stroke:'var(--jumper)','stroke-width':6,fill:'none','stroke-linecap':'round',class:'ring'},h);
+    const lab=txt(cx+(dx?-12:0),cy+(dy?-2:4),j,{'font-weight':700,'font-size':13,fill:'var(--jumper)'},h);
+    h.addEventListener('click',()=>{ run.jump[j]=!run.jump[j]; update(); }); key(h);
+    G.j[j]={p,lab}; }
+  // posts
+  G.post={};
+  const off={TP1:[0,-22],TP2:[0,-22],TP3:[0,30],TP4:[0,-22],TP5:[0,-22],TP6:[0,-22],TP7:[0,-22],TP8:[26,-20],TP9:[-28,-20],TP10:[34,5],TP11:[0,32],TP12:[22,-20],COM:[-42,-10],BA:[0,-20],BB:[0,-20]};
+  for(const k in P){ const [x,y]=P[k]; const h=el('g',{class:'hit',tabindex:0,role:'button','aria-label':'Test point '+k},g);
+    el('circle',{cx:x,cy:y,r:22,fill:'transparent'},h);
+    el('circle',{cx:x,cy:y,r:12,fill:k==='COM'?'var(--post-com)':'var(--post)',stroke:'#000','stroke-width':1.5,class:'ring'},h);
+    el('circle',{cx:x,cy:y,r:4,fill:'#222'},h);
+    const [ox,oy]=off[k]; txt(x+ox,y+oy,k==='BA'?'A':k==='BB'?'B':k,{'font-weight':700,'font-size':13,fill:'var(--tplabel)'},h);
+    h.addEventListener('click',()=>placeProbe(k)); key(h); G.post[k]=h; }
+  G.leads=el('g',{'pointer-events':'none'});
+}
+function key(h){ h.addEventListener('keydown',e=>{ if(e.key==='Enter'||e.key===' '){ e.preventDefault(); h.dispatchEvent(new Event('click')); } }); }
+function drawDynamic(s){
+  // switches
+  for(const sw of SWS){ const g=G.sw[sw]; const on=run.sw[sw]; const {x1,x2,y}=g;
+    g.lev.setAttribute('x2',on?x2-12:x2-30); g.lev.setAttribute('y2',on?y:y-18); g.st.textContent=on?'ON':'OFF'; g.st.setAttribute('fill',on?'var(--good)':'var(--trace)'); }
+  for(const j of JUMPS){ const on=run.jump[j]; G.j[j].p.setAttribute('stroke-dasharray',on?'':'3 7'); G.j[j].p.setAttribute('opacity',on?1:.45); G.j[j].lab.textContent=on?j:j+' out'; }
+  // bulbs
+  for(const L of BULBS){ const b=run.sock[L], g=G.bulb[L];
+    g.glass.setAttribute('display',b?'':'none'); g.fil.setAttribute('display',b?'':'none'); g.empty.setAttribute('display',b?'none':'');
+    let lum=0; const e=s.lamps.find(e=>e.id===L);
+    if(e){ const dv=Math.abs((s.V[e.a]||0)-(s.V[e.b]||0)); lum=Math.min(1,Math.pow(dv/LAMPS[e.lamp.kind].Vr,2.2)); if(lum<.012) lum=0; }
+    g.glow.setAttribute('opacity',(lum*.95).toFixed(3)); g.glow.setAttribute('r',(18+12*lum).toFixed(1));
+    const c=lum>.5?'#fff3b0':lum>.15?'#ffd54f':'#ff8f00'; g.glow.setAttribute('fill',c);
+    g.glass.setAttribute('fill',lum>0?c:'#fff8e1'); g.fil.setAttribute('stroke',lum>.02?'#e65100':'#555'); }
+  // bench
+  const bg=G.benchG; bg.innerHTML='';
+  el('rect',{x:135,y:96,width:50,height:28,rx:5,fill:'#cfd8dc',stroke:'#333'},bg);
+  if(run.bench){ const k=run.bench.kind; const h=el('g',{class:'hit',tabindex:0,role:'button','aria-label':'Put bulb back'},bg);
+    el('circle',{cx:160,cy:96,r:16,fill:'#fff8e1',stroke:'#777','stroke-width':1.5},h);
+    el('path',{d:'M152,99 q4,-12 8,0 q4,-12 8,0',fill:'none',stroke:'#555','stroke-width':1.6},h);
+    txt(160,140,`${run.bench.home} bulb • base says "${LAMPS[k].stamp}"`,{'font-size':11},bg);
+    h.addEventListener('click',()=>toggleBulb(run.bench.home)); key(h);
+  } else txt(160,140,'(empty: tap a bulb on the board)',{'font-size':11,opacity:.7},bg);
+  G.ptc.textContent=run.ptcTrip?'F1 TRIPPED':'';
+  // probe leads
+  G.leads.innerHTML='';
+  const drawLead=(k,col)=>{ const n=run.probe[k]; if(!n) return; const [x,y]=P[n]; const sx=k==='r'?1:-1;
+    el('circle',{cx:x,cy:y,r:16,fill:'none',stroke:col,'stroke-width':3},G.leads);
+    el('line',{x1:x,y1:y,x2:x+sx*10,y2:y+12,stroke:'#9e9e9e','stroke-width':3,'stroke-linecap':'round'},G.leads);
+    el('line',{x1:x+sx*10,y1:y+12,x2:x+sx*34,y2:y+44,stroke:col,'stroke-width':11,'stroke-linecap':'round'},G.leads);
+    el('line',{x1:x+sx*34,y1:y+44,x2:x+sx*52,y2:y+70,stroke:col,'stroke-width':5,'stroke-linecap':'round',opacity:.85},G.leads); };
+  drawLead('b','#111'); drawLead('r','#d32f2f');
+}
+
+// ---------- meter (matches the class 7-function manual-range meter) ----------
+// kind: dcv/acv/bat/dca/ohm/diode/hfe ; th = knob angle (0 = up, clockwise)
+const POS=[
+ {id:'dcv200m',k:'dcv',lab:'200m',th:268,name:'DCV 200m',full:.2,mul:1000,dec:1},
+ {id:'dcv2000m',k:'dcv',lab:'2000m',th:285,name:'DCV 2000m',full:2,mul:1000,dec:0},
+ {id:'dcv20',k:'dcv',lab:'20',th:305,name:'DCV 20',full:20,mul:1,dec:2},
+ {id:'dcv200',k:'dcv',lab:'200',th:326,name:'DCV 200',full:200,mul:1,dec:1},
+ {id:'dcv250',k:'dcv',lab:'250',th:342,name:'DCV 250',full:250,mul:1,dec:0,max:250},
+ {id:'acv250',k:'acv',lab:'250',th:2,name:'ACV 250',dec:0},
+ {id:'acv200',k:'acv',lab:'200',th:18,name:'ACV 200',dec:1},
+ {id:'bat15',k:'bat',lab:'1.5V',th:33,name:'Battery 1.5V (4.0mA)',load:375,dec:2},
+ {id:'bat9',k:'bat',lab:'9V',th:46,name:'Battery 9V (25mA)',load:360,dec:2},
+ {id:'dca200u',k:'dca',lab:'200µ',th:61,name:'DCA 200µ',full:200e-6,mul:1e6,dec:1,sh:1000},
+ {id:'dca2000u',k:'dca',lab:'2000µ',th:79,name:'DCA 2000µ',full:2000e-6,mul:1e6,dec:0,sh:100},
+ {id:'dca20m',k:'dca',lab:'20m',th:93,name:'DCA 20m',full:.02,mul:1000,dec:2,sh:10},
+ {id:'dca200m',k:'dca',lab:'200m',th:108,name:'DCA 200m',full:.2,mul:1000,dec:1,sh:1},
+ {id:'dca5a',k:'dca',lab:'5A',th:126,name:'DCA 5A',full:20,mul:1,dec:2,a5:true},
+ {id:'hfe',k:'hfe',lab:'hFE',th:142,name:'hFE'},
+ {id:'diode',k:'diode',lab:'⯈|',th:157,name:'Diode'},
+ {id:'ohm200',k:'ohm',lab:'200',th:175,name:'Ω 200',full:200,mul:1,dec:1},
+ {id:'ohm2000',k:'ohm',lab:'2000',th:191,name:'Ω 2000',full:2000,mul:1,dec:0},
+ {id:'ohm20k',k:'ohm',lab:'20k',th:203,name:'Ω 20k',full:2e4,mul:1e-3,dec:2},
+ {id:'ohm200k',k:'ohm',lab:'200k',th:226,name:'Ω 200k',full:2e5,mul:1e-3,dec:1},
+ {id:'ohm2000k',k:'ohm',lab:'2000k',th:245,name:'Ω 2000k',full:2e6,mul:1e-3,dec:0},
+];
+const curPos=()=>POS[run.pos];
+let last={};
+const OVER='OVER';
+function meterElement(){
+  const {r,b}=run.probe; if(!r||!b) return null; const p=curPos();
+  if(run.jack==='a5') return {a:r,b:b,R:.01,id:'meter'};          // 5ADC jack is a bare shunt to COM
+  if(p.k==='dca'){ if(p.a5||!run.fuse) return null; return {a:r,b:b,R:p.sh,id:'meter',fused:true}; }
+  if(p.k==='bat') return {a:r,b:b,R:p.load,id:'meter'};
+  if(p.k==='hfe') return null;
+  return {a:r,b:b,R:1e6,id:'meter'};                               // volts / ohms input
+}
+function digits(x,p){ // 3½-digit display: max 1999 counts
+  const v=Math.abs(x)*(p.mul||1); const cap=p.max!=null?p.max:1999/Math.pow(10,p.dec);
+  if(v>cap+1e-9) return OVER;
+  return (x<0&&v.toFixed(p.dec)!==(0).toFixed(p.dec)?'-':'')+v.toFixed(p.dec);
+}
+function compute(){
+  const m=meterElement();
+  let s=solve(m);
+  if(m&&m.fused&&Math.abs(s.cur(m))>.25){ run.fuse=false; flash('Pop! The meter\'s fuse blew. The VΩmA jack is only good for 200 mA. Click the meter\'s VΩmA jack to replace the fuse.',true); s=solve(meterElement()); }
+  if(!run.ptcTrip&&s.ptcI>1.5){ run.ptcTrip=true; run.ptcCool=0; flash('Fuse F1 tripped: something is shorting the battery. Turn S1 OFF and remove the short. It resets after a few seconds.',true); s=solve(meterElement()); }
+  last=s; last.powered=false;
+  const lampR0={}; for(const e of s.lamps) lampR0[e.id]=e.R;
+  const p=curPos(); const {r,b}=run.probe; const both=r&&b;
+  let val='';
+  if(!run.on) val='';
+  else if(p.k==='hfe') val='0';
+  else if(p.k==='acv') val=(0).toFixed(p.dec);
+  else if(p.k==='ohm'||p.k==='diode'){
+    if(!both||run.jack!=='vma') val=OVER;
+    else { const dv=Math.abs((s.V[r]||0)-(s.V[b]||0));
+      if(dv>.02){ last.powered=true; val=p.k==='diode'?String(Math.round(dv*1000)).slice(0,4):(Math.random()*1999/Math.pow(10,p.dec)).toFixed(p.dec); }
+      else { const R=ohms(r,b,lampR0);
+        if(p.k==='diode'){ const mv=R*1; val=mv>1999?OVER:String(Math.round(mv)).padStart(3,'0'); }   // ~1 mA test current
+        else val=R>2.5e7?OVER:digits(R,p); } }
+  }
+  else if(!both) val=(0).toFixed(p.dec);
+  else if(p.k==='dcv'||p.k==='bat'){ const dv=run.jack==='vma'?(s.V[r]||0)-(s.V[b]||0):0; val=digits(dv,p.k==='bat'?{dec:2,mul:1}:p); }
+  else if(p.k==='dca'){
+    let I=0; if(p.a5){ if(run.jack==='a5') I=s.cur(m); } else if(run.jack==='vma'&&m) I=s.cur(m);
+    val=digits(I,p); }
+  last.display={val};
+  return s;
+}
+
+// ---------- meter drawing ----------
+const msvg=document.getElementById('meterSvg'); const MC=[215,420];
+const pol=(th,R)=>[MC[0]+R*Math.sin(th*Math.PI/180),MC[1]-R*Math.cos(th*Math.PI/180)];
+let M={};
+function mtxt(x,y,s,attrs={},parent){ return txt(x,y,s,Object.assign({fill:'#f3f3f3','font-family':'Arial, Helvetica, sans-serif','font-weight':700},attrs),parent||msvg); }
+function drawMeter(){
+  msvg.innerHTML='';
+  const E=(t,a,p)=>el(t,a,p||msvg);
+  E('rect',{x:4,y:4,width:462,height:852,rx:34,fill:'#d42a1f',stroke:'#8e1610','stroke-width':4});
+  E('rect',{x:24,y:24,width:422,height:180,rx:14,fill:'#c62318',stroke:'#a51b12','stroke-width':2});
+  for(let i=0;i<5;i++) E('rect',{x:24,y:32+i*8,width:422,height:3,fill:'#b81f15'});
+  E('rect',{x:58,y:66,width:356,height:112,rx:6,fill:'#9c1b12'});
+  E('rect',{x:66,y:72,width:340,height:100,rx:4,fill:'#b9c4a0',stroke:'#59604a','stroke-width':2});
+  M.lcd=E('text',{x:392,y:150,'text-anchor':'end','font-family':'"Share Tech Mono", ui-monospace, monospace','font-size':74,fill:'#1d2416'});
+  M.lcdOver=E('text',{x:86,y:150,'text-anchor':'start','font-family':'"Share Tech Mono", ui-monospace, monospace','font-size':74,fill:'#1d2416'});
+  E('rect',{x:24,y:214,width:422,height:620,rx:16,fill:'#1c1c1c'});
+  // range group outlines
+  const arc=(t1,t2,R,col)=>{ const [x1,y1]=pol(t1,R),[x2,y2]=pol(t2,R); const large=((t2-t1+360)%360)>180?1:0; E('path',{d:`M${x1},${y1} A${R},${R} 0 ${large} 1 ${x2},${y2}`,fill:'none',stroke:col,'stroke-width':2.5}); };
+  arc(258,350,200,'#e8e8e8'); arc(354,26,200,'#e0463a'); arc(28,52,200,'#e8e8e8'); arc(55,134,200,'#2f9e5b'); arc(170,252,200,'#2f9e5b');
+  mtxt(58,258,'DCV',{'font-size':19}); mtxt(240,232,'ACV',{'font-size':16}); mtxt(402,306,'DCA',{'font-size':21});
+  mtxt(44,528,'Ω',{'font-size':28}); mtxt(372,250,'⊣|⊢',{'font-size':14});
+  // knob positions
+  M.pos=[];
+  POS.forEach((p,i)=>{ const h=E('g',{class:'hit',tabindex:0,role:'radio','aria-label':p.name});
+    const [lx,ly]=pol(p.th,174), [dx,dy]=pol(p.th,146);
+    E('circle',{cx:lx,cy:ly+(-5),r:21,fill:'transparent',class:'ring',stroke:'transparent'},h);
+    E('circle',{cx:dx,cy:dy,r:4,fill:'#f3f3f3'},h);
+    const t=mtxt(lx,ly+2,p.lab,{'font-size':p.lab.length>4?15:17},h);
+    h.addEventListener('click',()=>{ run.pos=i; update(); }); key(h); M.pos.push(t); });
+  // knob
+  E('circle',{cx:MC[0],cy:MC[1],r:132,fill:'#b51d14'}); E('circle',{cx:MC[0],cy:MC[1],r:126,fill:'#e0372a'});
+  M.knob=E('g',{});
+  E('rect',{x:MC[0]-17,y:MC[1]-122,width:34,height:240,rx:14,fill:'#c42318',stroke:'#9c1a11','stroke-width':2},M.knob);
+  E('rect',{x:MC[0]-6,y:MC[1]-120,width:12,height:46,rx:6,fill:'#ef5a4c'},M.knob);
+  const kh=E('g',{class:'hit',tabindex:0,role:'slider','aria-label':'Dial knob. Arrow keys turn it.'}); E('circle',{cx:MC[0],cy:MC[1],r:132,fill:'transparent',class:'ring',stroke:'transparent'},kh);
+  kh.addEventListener('keydown',e=>{ if(e.key==='ArrowRight'||e.key==='ArrowUp'){ run.pos=(run.pos+1)%POS.length; update(); e.preventDefault(); } if(e.key==='ArrowLeft'||e.key==='ArrowDown'){ run.pos=(run.pos+POS.length-1)%POS.length; update(); e.preventDefault(); } });
+  kh.addEventListener('click',()=>{ run.pos=(run.pos+1)%POS.length; update(); });
+  // hFE socket
+  E('rect',{x:34,y:600,width:92,height:120,rx:10,fill:'none',stroke:'#e8e8e8','stroke-width':2});
+  E('circle',{cx:80,cy:648,r:28,fill:'#2f62c9'}); for(let i=0;i<8;i++){ const a=i*Math.PI/4; E('circle',{cx:80+14*Math.cos(a),cy:648+14*Math.sin(a),r:3.5,fill:'#0d2a66'}); }
+  mtxt(56,706,'NPN',{'font-size':12}); mtxt(105,706,'PNP',{'font-size':12});
+  // power slide
+  const ph=E('g',{class:'hit',tabindex:0,role:'switch','aria-label':'Power switch'});
+  E('rect',{x:134,y:618,width:150,height:40,rx:8,fill:'#f4f4f4',class:'ring',stroke:'#f4f4f4'},ph);
+  mtxt(164,646,'OFF',{fill:'#111','font-size':19},ph); mtxt(260,646,'ON',{fill:'#111','font-size':19},ph);
+  E('rect',{x:191,y:628,width:36,height:20,rx:10,fill:'#333'},ph);
+  M.slide=E('rect',{x:191,y:628,width:20,height:20,rx:10,fill:'#e2401f'},ph);
+  ph.addEventListener('click',()=>{ run.on=!run.on; update(); }); key(ph);
+  // jacks
+  M.jack={};
+  [['a5',640,'5ADC'],['vma',725,'VΩmA'],['com',806,'COM']].forEach(([k,y,l])=>{ const h=E('g',{class:'hit',tabindex:0,role:'button','aria-label':l+' jack'});
+    E('circle',{cx:408,cy:y,r:32,fill:'#c8231a',class:'ring',stroke:'#7a110b','stroke-width':3},h); E('circle',{cx:408,cy:y,r:19,fill:'#6e0d07'},h); E('circle',{cx:408,cy:y,r:9,fill:'#1a0302'},h);
+    const plug=E('circle',{cx:408,cy:y,r:22,fill:'none','stroke-width':8},h);
+    mtxt(364,y+8,l,{'text-anchor':'end','font-size':22},h);
+    h.addEventListener('click',()=>{ if(k==='com') return; if(k==='vma'&&!run.fuse){ run.fuse=true; flash('You replaced the meter\'s fuse.'); } run.jack=k; update(); }); key(h);
+    M.jack[k]={plug,h}; });
+  mtxt(364,664,'5Amax',{'text-anchor':'end','font-size':12,'font-weight':400});
+  mtxt(364,750,'250VAC 250VDC 200mAmax',{'text-anchor':'end','font-size':11,fill:'#ff5a4c','font-weight':400});
+  M.fuseTxt=mtxt(364,770,'',{'text-anchor':'end','font-size':13,fill:'#ffd54f'});
+  mtxt(40,756,'7 FUNCTION',{'text-anchor':'start','font-size':15});
+  mtxt(40,786,'DIGITAL',{'text-anchor':'start','font-size':24}); mtxt(40,814,'MULTIMETER',{'text-anchor':'start','font-size':24});
+}
+function drawMeterState(){
+  const d=last.display||{val:''}; const p=curPos();
+  if(d.val===OVER){ M.lcd.textContent=''; M.lcdOver.textContent='1'; } else { M.lcdOver.textContent=''; M.lcd.textContent=d.val; }
+  M.knob.setAttribute('transform',`rotate(${p.th} ${MC[0]} ${MC[1]})`);
+  M.pos.forEach((t,i)=>t.setAttribute('fill',i===run.pos?'#ffd54f':'#f3f3f3'));
+  M.slide.setAttribute('x',run.on?207:191);
+  for(const k in M.jack){ const pl=M.jack[k].plug; pl.setAttribute('stroke',k==='com'?'#111':k===run.jack?'#ff2d20':'none'); pl.setAttribute('stroke-width',k==='com'?10:8); }
+  M.fuseTxt.textContent=run.fuse?'':'FUSE BLOWN – click jack';
+}
+
+// ---------- UI ----------
+const $=id=>document.getElementById(id);
+function buildMeter(){
+  drawMeter();
+  $('probeR').onclick=()=>{ run.sel='r'; update(); }; $('probeB').onclick=()=>{ run.sel='b'; update(); };
+  $('liftBtn').onclick=()=>{ run.probe={r:null,b:null}; run.sel='r'; update(); };
+  $('logBtn').onclick=recordReading;
+}
+function placeProbe(k){
+  const other=run.sel==='r'?'b':'r';
+  run.probe[run.sel]=k; run.sel=other;
+  update();
+}
+function toggleBulb(L){
+  if(run.sock[L]){ if(run.bench){ run.sock[run.bench.home]=run.bench; } run.bench=run.sock[L]; run.sock[L]=null; }
+  else if(run.bench&&run.bench.home===L){ run.sock[L]=run.bench; run.bench=null; }
+  else if(run.bench){ run.sock[run.bench.home]=run.bench; run.bench=null; }
+  update();
+}
+let flashT=0;
+function flash(m,warn){ run.flash={m,warn}; flashT=Date.now(); }
+function statusText(){
+  if(run.flash&&Date.now()-flashT<7000) return run.flash;
+  const {r,b}=run.probe; const p=curPos();
+  if(!run.on) return {m:'The meter is OFF. Slide the switch on the meter to ON.'};
+  if(!r) return {m:'Tap a post to place the RED probe.'};
+  if(!b) return {m:'Now tap a post to place the BLACK probe.'};
+  if(run.jack==='a5'&&!(p.k==='dca'&&p.a5)) return {m:'Careful: the red lead is in the 5ADC jack, so the meter is acting like a wire between the probes. Move it to VΩmA unless you are measuring amps on the 5A setting.',warn:true};
+  if(p.k==='dca'&&p.a5&&run.jack!=='a5') return {m:'The 5A setting needs the red lead in the 5ADC jack.',warn:true};
+  if(last.powered) return {m:'The reading keeps jumping. Ohms only work with the power off (S1 OFF) and nothing else powering those points.',warn:true};
+  if(last.display&&last.display.val===OVER) return {m:p.k==='ohm'?'The display shows 1 at the left: the resistance is too high for this range, or the path is open. Try a higher Ω range.':p.k==='diode'?'The display shows 1: open circuit (no path).':'The display shows 1 at the left: over range. Turn the dial to a higher range.'};
+  if(p.k==='acv') return {m:'This is AC volts. The board runs on DC, so use DCV.',warn:true};
+  if(p.k==='hfe') return {m:'hFE tests transistors in the blue socket. Pick another setting.'};
+  if(p.k==='bat') return {m:'Battery test puts a small load on the battery. Use DCV for the board.'};
+  return {m:`${p.name}: red on ${nm(r)}, black on ${nm(b)}.`};
+}
+function rangeHelp(){
+  const p=curPos();
+  const t={dcv:{'dcv200m':'millivolts, up to 199.9 mV','dcv2000m':'millivolts, up to 1999 mV','dcv20':'volts, up to 19.99 V','dcv200':'volts, up to 199.9 V','dcv250':'volts, up to 250 V'}[p.id],
+    dca:{'dca200u':'microamps, up to 199.9 µA','dca2000u':'microamps, up to 1999 µA','dca20m':'milliamps, up to 19.99 mA','dca200m':'milliamps, up to 199.9 mA','dca5a':'amps, up to 5 A (red lead in 5ADC)'}[p.id],
+    ohm:{'ohm200':'ohms, up to 199.9 Ω','ohm2000':'ohms, up to 1999 Ω','ohm20k':'kilohms, up to 19.99 kΩ','ohm200k':'kilohms, up to 199.9 kΩ','ohm2000k':'kilohms, up to 1999 kΩ'}[p.id],
+    acv:'AC volts (not used on this board)',bat:'battery test under load',diode:'diode test: shows millivolts across the part',hfe:'transistor gain'}[p.k];
+  return t;
+}
+function nm(k){ return k==='BA'?'Bench A':k==='BB'?'Bench B':k; }
+function update(){
+  const s=compute(); drawDynamic(s);
+  drawMeterState();
+  $('meterHint').innerHTML=`Dial: <b>${curPos().name}</b> (${rangeHelp()}). Red lead in <b>${run.jack==='a5'?'5ADC':'VΩmA'}</b>, black in COM.`+(run.fuse?'':' <b>Fuse blown: click the VΩmA jack to replace it.</b>');
+  $('probeRAt').textContent=run.probe.r?'on '+nm(run.probe.r):'not placed'; $('probeBAt').textContent=run.probe.b?'on '+nm(run.probe.b):'not placed';
+  $('probeR').classList.toggle('sel',run.sel==='r'); $('probeB').classList.toggle('sel',run.sel==='b');
+  const st=statusText(); $('status').textContent=st.m; $('status').classList.toggle('warn',!!st.warn);
+}
+function tick(){
+  // PTC reset, 2.5 V bulb burnout, flicker
+  const s=last; if(!s.V) return;
+  if(run.ptcTrip){ if(s.ptcI<.05) run.ptcCool+=.25; else run.ptcCool=0; if(run.ptcCool>=3){ run.ptcTrip=false; run.ptcCool=0; flash('F1 has cooled down and reset.'); } }
+  for(const e of s.lamps){ if(e.id==='bench') continue; if(e.lamp.kind==='25v'){ const dv=Math.abs((s.V[e.a]||0)-(s.V[e.b]||0)); if(dv>3.6){ e.lamp.burn+=.25; if(e.lamp.burn>2.5){ e.lamp.kind='blown'; flash(`Pop! Bulb ${e.lamp.home} burned out.`,true); } } } }
+  update();
+}
+
+// ---------- readings log ----------
+function swState(){ return SWS.map(s=>s+(run.sw[s]?' on':' off')).join(', ')+(JUMPS.filter(j=>!run.jump[j]).length?'; '+JUMPS.filter(j=>!run.jump[j]).join(',')+' out':''); }
+function recordReading(){
+  const d=last.display; const {r,b}=run.probe; if(!run.on||!r||!b){ flash('Turn the meter on and place both probes first.',true); update(); return; }
+  logRows.push({mode:curPos().name+(run.jack==='a5'?' (5ADC jack)':''),r:nm(r),b:nm(b),val:d.val===OVER?'1 (over range)':d.val,sw:swState()});
+  renderLog();
+}
+function renderLog(){
+  $('logBody').innerHTML=logRows.length?logRows.map((x,i)=>`<tr><td>${i+1}</td><td>${x.mode}</td><td>${x.r}</td><td>${x.b}</td><td><b>${x.val}</b></td><td>${x.sw}</td></tr>`).join(''):'<tr><td colspan="6" class="note">No readings yet. Place both probes and press <b>Record reading</b>.</td></tr>';
+}
+async function copyText(t,msgEl){ try{ await navigator.clipboard.writeText(t); msgEl.textContent='Copied.'; }catch(e){ msgEl.textContent='Select and copy the text by hand.'; } setTimeout(()=>msgEl.textContent='',2500); }
+$('copyLog').onclick=()=>copyText((scenarioCode?'Scenario '+scenarioCode+'\n':'')+'#\tMode\tRed\tBlack\tReading\tSwitches\n'+logRows.map((x,i)=>[i+1,x.mode,x.r,x.b,x.val,x.sw].join('\t')).join('\n'),$('copyMsg'));
+$('clearLog').onclick=()=>{ logRows=[]; renderLog(); };
+
+// ---------- faults / answers ----------
+function faults(c){
+  const f=[];
+  if(c.V<5.6||c.Rint>=3) f.push({loc:'battery',type:'source',label:`Battery: ${c.V.toFixed(1)} V, ${c.Rint} Ω internal`});
+  for(const [k,n] of SEGS){ const v=c.seg[k]; if(v<0) f.push({loc:k,type:'open',label:n+': open'}); else if(v>0) f.push({loc:k,type:'highr',label:`${n}: ${v} Ω (bad connection)`}); }
+  for(const s of SWS){ if(c.sw[s]==='open') f.push({loc:s,type:'noclose',label:s+": won't turn on"}); if(c.sw[s]==='closed') f.push({loc:s,type:'noopen',label:s+": won't turn off"}); }
+  for(const L of BULBS){ const b=c.bulb[L]; const n=L.slice(1);
+    if(b==='blown') f.push({loc:L+'b',type:'open',label:L+': blown bulb'});
+    if(b==='12v'||b==='25v') f.push({loc:L+'b',type:'wrong',label:L+': wrong bulb ('+LAMPS[b].stamp+')'});
+    if(b==='short') f.push({loc:'sock'+n,type:'short',label:L+': shorted socket'}); }
+  return f;
+}
+function fillAnswerLists(){ $('ansLoc').innerHTML='<option value="">Choose…</option>'+LOCS.map(([k,n])=>`<option value="${k}">${n}</option>`).join(''); $('ansType').innerHTML='<option value="">Choose…</option>'+TYPES.map(([k,n])=>`<option value="${k}">${n}</option>`).join(''); }
+function diagIntro(){
+  const n=faults(cfg).length;
+  const can=cfg.check||practice;
+  $('diagIntro').innerHTML=(scenarioCode?`Scenario <b>${scenarioCode}</b>. `:'')+(cfg.count||practice?`There ${n===1?'is <b>1</b> problem':'are <b>'+n+'</b> problems'} hidden on this board. `:'')+(can?'When you think you found one, pick where it is and what kind it is.':'Your teacher will check your answer. Write your diagnosis on your worksheet.');
+  $('checkBtn').disabled=!can; $('ansLoc').disabled=!can; $('ansType').disabled=!can;
+  $('tries').textContent=tries?`Tries: ${tries} • Found: ${found.size} of ${n}`:'';
+}
+const near=(a,b)=>a&&b&&a!==b&&((a.endsWith('b')&&b==='sock'+a[1])||(b.endsWith('b')&&a==='sock'+b[1]));
+$('checkBtn').onclick=()=>{
+  const loc=$('ansLoc').value, type=$('ansType').value, box=$('ansMsg'); box.hidden=false;
+  if(!loc||!type){ box.className='msg mid'; box.textContent='Pick both where it is and what kind of problem it is.'; return; }
+  tries++; const F=faults(cfg); const i=F.findIndex(f=>f.loc===loc&&f.type===type);
+  if(i>=0&&!found.has(i)){ found.add(i); box.className='msg good'; box.textContent=found.size===F.length?`Correct! You found ${F.length===1?'the fault':'all '+F.length+' faults'} in ${tries} ${tries===1?'try':'tries'}. Show your teacher this screen.`:`Correct! That's ${found.size} of ${F.length}. Keep going.`; }
+  else if(i>=0){ box.className='msg mid'; box.textContent='You already found that one.'; }
+  else if(F.some(f=>f.loc===loc)){ box.className='msg mid'; box.textContent='Right place, but a different kind of problem. What do your readings say?'; }
+  else if(F.some(f=>near(f.loc,loc))){ box.className='msg mid'; box.textContent='Very close. Is it the bulb itself or its socket? Try the bulb on the test bench.'; }
+  else { box.className='msg bad'; box.textContent='Not there. Go back to your readings: where does the voltage show up that shouldn\'t?'; }
+  diagIntro();
+};
+const PRESETS=[
+ ['All normal',c=>{}],
+ ['H1 Weak battery',c=>{c.Rint=10}],
+ ['H2 Open wire TP6–TP7',c=>{c.seg.w67=-1}],
+ ['H3 Shorted L2',c=>{c.bulb.L2='short'}],
+ ['H4 Corroded splice',c=>{c.seg.w78=47}],
+ ['H5 S3 won\'t turn on',c=>{c.sw.S3='open'}],
+ ['H6 S2 won\'t turn off',c=>{c.sw.S2='closed'}],
+ ['H7 Open wire TP11–TP12',c=>{c.seg.w1112=-1}],
+ ['H8 Bad L1 socket',c=>{c.seg.sock1=-1}],
+ ['Blown bulb L3',c=>{c.bulb.L3='blown'}],
+ ['Blown bulb L1',c=>{c.bulb.L1='blown'}],
+ ['Wrong bulb L4 (12 V)',c=>{c.bulb.L4='12v'}],
+ ['Worn-out batteries',c=>{c.V=4.6;c.Rint=3}],
+ ['Open battery lead',c=>{c.seg.bat=-1}],
+ ['Bad L3 socket (22 Ω)',c=>{c.seg.sock3=22}],
+];
+function randomCfg(n){ const c=DEF(); const pool=PRESETS.slice(1).sort(()=>Math.random()-.5); let used=0; for(const [,f] of pool){ if(used>=n) break; const t=JSON.parse(JSON.stringify(c)); f(t); if(JSON.stringify(t)===JSON.stringify(c)) continue; const before=faults(c).length; f(c); if(faults(c).length>before) used++; } return c; }
+
+// ---------- scenario codes ----------
+const KEY='MULTIMETER';
+function encode(c){
+  const a=[Math.round(c.V*10),Math.round(c.Rint*10),...SEGS.map(s=>c.seg[s[0]]),...SWS.map(s=>['ok','open','closed'].indexOf(c.sw[s])),...BULBS.map(L=>['ok','blown','12v','25v','short'].indexOf(c.bulb[L])),(c.check?1:0)+(c.count?2:0)];
+  const s=a.join('.'); let x=''; for(let i=0;i<s.length;i++) x+=String.fromCharCode(s.charCodeAt(i)^KEY.charCodeAt(i%KEY.length));
+  let sum=0; for(const ch of s) sum=(sum*31+ch.charCodeAt(0))%1296;
+  return 'MM-'+btoa(x).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'')+sum.toString(36).padStart(2,'0');
+}
+function decode(code){
+  try{ code=code.trim(); if(!code.startsWith('MM-')) return null; const body=code.slice(3,-2), chk=code.slice(-2);
+    let b=body.replace(/-/g,'+').replace(/_/g,'/'); while(b.length%4) b+='='; const x=atob(b); let s=''; for(let i=0;i<x.length;i++) s+=String.fromCharCode(x.charCodeAt(i)^KEY.charCodeAt(i%KEY.length));
+    let sum=0; for(const ch of s) sum=(sum*31+ch.charCodeAt(0))%1296; if(sum.toString(36).padStart(2,'0')!==chk) return null;
+    const a=s.split('.').map(Number); const c=DEF(); let i=0; c.V=a[i++]/10; c.Rint=a[i++]/10; for(const [k] of SEGS) c.seg[k]=a[i++]; for(const S of SWS) c.sw[S]=['ok','open','closed'][a[i++]]; for(const L of BULBS) c.bulb[L]=['ok','blown','12v','25v','short'][a[i++]]; const fl=a[i++]; c.check=!!(fl&1); c.count=!!(fl&2);
+    if(!(c.V>=0&&c.V<=12&&c.Rint>0)) return null; return c; }catch(e){ return null; }
+}
+
+// ---------- teacher panel ----------
+function buildTeacher(){
+  $('presets').innerHTML=PRESETS.map((p,i)=>`<button type="button" class="btn" data-p="${i}">${p[0]}</button>`).join('')+'<button type="button" class="btn" data-p="r1">Random: 1 fault</button><button type="button" class="btn" data-p="r2">Random: 2 faults</button>';
+  $('presets').querySelectorAll('button').forEach(b=>b.onclick=()=>{ const p=b.dataset.p; const keep={check:cfg.check,count:cfg.count};
+    if(p==='r1'||p==='r2') cfg=randomCfg(p==='r1'?1:2); else { cfg=DEF(); PRESETS[+p][1](cfg); } Object.assign(cfg,keep); applyCfg(); });
+  $('tSw').innerHTML=SWS.map(s=>`<div class="row"><label for="tsw-${s}">${s}</label><select id="tsw-${s}" data-s="${s}"><option value="ok">Works normally</option><option value="open">Won't turn on (stuck open)</option><option value="closed">Won't turn off (stuck closed)</option></select></div>`).join('');
+  $('tBulb').innerHTML=BULBS.map(L=>`<div class="row"><label for="tb-${L}">${L}</label><select id="tb-${L}" data-l="${L}"><option value="ok">Good #40 bulb (6.3 V)</option><option value="blown">Blown bulb</option><option value="12v">Wrong bulb: 12 V 0.1 A (dim)</option><option value="25v">Wrong bulb: 2.5 V (burns out)</option><option value="short">Shorted socket</option></select></div>`).join('');
+  $('tSeg').innerHTML=SEGS.map(([k,n])=>`<div class="row"><label for="ts-${k}">${n}</label><select id="ts-${k}" data-k="${k}"><option value="0">Good</option><option value="-1">Broken (open)</option><option value="r">Bad connection…</option></select><input type="number" id="tsr-${k}" data-k="${k}" min="1" max="999" step="1" style="max-width:90px" aria-label="${n} resistance in ohms" hidden><span class="note" id="tsu-${k}" hidden>Ω</span></div>`).join('');
+  $('tV').oninput=()=>{ cfg.V=+$('tV').value; teacherChanged(); };
+  $('tR').onchange=()=>{ cfg.Rint=+$('tR').value; teacherChanged(); };
+  SWS.forEach(s=>$('tsw-'+s).onchange=e=>{ cfg.sw[s]=e.target.value; teacherChanged(); });
+  BULBS.forEach(L=>$('tb-'+L).onchange=e=>{ cfg.bulb[L]=e.target.value; resetBulbs(); teacherChanged(); });
+  SEGS.forEach(([k])=>{ $('ts-'+k).onchange=e=>{ const v=e.target.value; cfg.seg[k]=v==='r'?47:+v; teacherChanged(); };
+    $('tsr-'+k).oninput=e=>{ const v=Math.max(1,Math.min(999,Math.round(+e.target.value||1))); cfg.seg[k]=v; teacherChanged(true); }; });
+  $('tCheck').onchange=e=>{ cfg.check=e.target.checked; teacherChanged(); };
+  $('tCount').onchange=e=>{ cfg.count=e.target.checked; teacherChanged(); };
+  $('copyCode').onclick=()=>copyText(encode(cfg),$('copyMsg2'));
+  $('copyLink').onclick=()=>copyText(studentLink(),$('copyMsg2'));
+}
+function studentLink(){ return location.href.split('?')[0].split('#')[0]+'?s='+encode(cfg); }
+function applyCfg(){ resetBulbs(); run.ptcTrip=false; teacherChanged(); }
+function teacherChanged(skipInputs){
+  $('tV').value=cfg.V; $('tVout').textContent=cfg.V.toFixed(1)+' V';
+  const ro=[...$('tR').options].map(o=>+o.value); if(!ro.includes(cfg.Rint)){ const o=document.createElement('option'); o.value=cfg.Rint; o.textContent=cfg.Rint+' Ω'; $('tR').appendChild(o);} $('tR').value=cfg.Rint;
+  SWS.forEach(s=>$('tsw-'+s).value=cfg.sw[s]); BULBS.forEach(L=>$('tb-'+L).value=cfg.bulb[L]);
+  SEGS.forEach(([k])=>{ const v=cfg.seg[k]; $('ts-'+k).value=v>0?'r':String(v); $('tsr-'+k).hidden=!(v>0); $('tsu-'+k).hidden=!(v>0); if(v>0&&!skipInputs) $('tsr-'+k).value=v; });
+  $('tCheck').checked=cfg.check; $('tCount').checked=cfg.count;
+  const F=faults(cfg); $('fsum').innerHTML=F.length?F.map(f=>`<li>${f.label}</li>`).join(''):'<li>Nothing. The board works normally.</li>';
+  $('codeOut').textContent=encode(cfg); $('linkOut').textContent=studentLink();
+  found=new Set(); tries=0; $('ansMsg').hidden=true; diagIntro(); update();
+}
+
+// ---------- tabs ----------
+function showTab(t){ document.querySelectorAll('[data-tab]').forEach(b=>b.classList.toggle('on',b.dataset.tab===t)); ['log','diag','teach'].forEach(k=>$('tab-'+k).hidden=k!==t); }
+document.querySelectorAll('[data-tab]').forEach(b=>b.onclick=()=>showTab(b.dataset.tab));
+
+// practice
+function loadPractice(n){ cfg=randomCfg(n); cfg.check=true; cfg.count=true; practice=true; scenarioCode=null; applyCfg(); $('reveal').hidden=true; $('ansMsg').hidden=true; flash(`Practice: ${n===1?'a hidden fault is':'two hidden faults are'} now on the board.`); update(); }
+$('practice1').onclick=()=>loadPractice(1); $('practice2').onclick=()=>loadPractice(2);
+$('revealBtn').onclick=()=>{ const F=faults(cfg); if(scenarioCode&&!practice){ $('reveal').hidden=false; $('reveal').textContent='Answers for a teacher scenario are not shown here. Ask your teacher.'; return; } $('reveal').hidden=false; $('reveal').textContent=F.length?'Answer: '+F.map(f=>f.label).join('; '):'Nothing is broken right now.'; };
+$('loadCode').onclick=()=>{ const c=decode($('codeIn').value); if(!c){ $('reveal').hidden=false; $('reveal').textContent='That code didn\'t work. Check it and try again.'; return; } loadScenario(c,$('codeIn').value.trim()); };
+function loadScenario(c,code){ cfg=c; scenarioCode=code; practice=false; studentMode=true; resetBulbs(); run.ptcTrip=false; $('teachTabBtn').hidden=true; $('tab-teach').hidden=true; $('scenarioTag').hidden=false; $('scenarioTag').textContent='Scenario '+code; $('reveal').hidden=true; $('ansMsg').hidden=true; diagIntro(); flash('Scenario loaded. Something on this board is broken. Find it!'); update(); }
+
+// ---------- boot ----------
+drawStatic(); buildMeter(); buildTeacher(); fillAnswerLists(); resetBulbs();
+const q=new URLSearchParams(location.search).get('s');
+if(q){ const c=decode(q); if(c){ teacherChanged(); loadScenario(c,q); showTab('diag'); } else { teacherChanged(); flash('That scenario link is broken. Ask your teacher for the code.',true); } }
+else teacherChanged();
+update(); setInterval(tick,250);
+})();
+</script>
+</body>
+</html>
