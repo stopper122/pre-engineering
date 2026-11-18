@@ -82,36 +82,36 @@ const n=motorCount(),sep=isSeparate(),motor=motorInfo[$("motor").value];
 $("motorWiringWrap").hidden=n!==2;$("pack2").hidden=!sep;
 $("wiringCaption").textContent=n===1?"One motor connected to one battery pack.":sep?"Each matching motor has its own battery pack and circuit.":"Both matching motors are wired in parallel across the same battery pack.";
 const cell1=pack("1"), cell2=sep?pack("2"):cell1;
-const battery=(x,y,label)=>'<rect x="'+x+'" y="'+y+'" width="118" height="52" rx="8" fill="var(--surface)" stroke="var(--line)" stroke-width="2"/><text x="'+(x+59)+'" y="'+(y+22)+'" text-anchor="middle" class="svg-label">'+label+'</text><text x="'+(x+59)+'" y="'+(y+40)+'" text-anchor="middle" class="svg-small">'+(cell1.wiring==="series"?"series":"parallel")+' cells</text>';
-const motor=(cx,cy,label)=>'<circle cx="'+cx+'" cy="'+cy+'" r="25" class="motor-symbol"/><text x="'+cx+'" y="'+(cy+5)+'" text-anchor="middle" class="svg-label">M</text><text x="'+cx+'" y="'+(cy+45)+'" text-anchor="middle" class="svg-small">'+label+'</text>';
+const battery=(x,y,label)=>'<rect x="'+x+'" y="'+y+'" width="118" height="52" rx="8" fill="var(--surface)" stroke="var(--line)" stroke-width="2"/><text x="'+(x+59)+'" y="'+(y+22)+'" text-anchor="middle" class="svg-label">'+label+'</text><text x="'+(x+59)+'" y="'+(y+40)+'" text-anchor="middle" class="svg-small">'+(p.wiring==="series"?"series":"parallel")+' cells</text>';
+const motorSymbol=(cx,cy,label)=>'<circle cx="'+cx+'" cy="'+cy+'" r="25" class="motor-symbol"/><text x="'+cx+'" y="'+(cy+5)+'" text-anchor="middle" class="svg-label">M</text><text x="'+cx+'" y="'+(cy+45)+'" text-anchor="middle" class="svg-small">'+label+'</text>';
 let svg;
 if(sep){
 svg='<svg viewBox="0 0 560 240" aria-hidden="true">'+
 '<text x="20" y="20" class="svg-small">Independent circuits · no shared motor supply</text>'+
-battery(20,38,"Pack 1")+
-'<path d="M138 53 H260 V68 H360" class="wire-pos"/><path d="M138 75 H285 V88 H360" class="wire-neg"/>'+motor(400,78,"Motor 1")+
-battery(20,142,"Pack 2")+
-'<path d="M138 157 H260 V172 H360" class="wire-pos"/><path d="M138 179 H285 V192 H360" class="wire-neg"/>'+motor(400,182,"Motor 2")+
+battery(20,38,"Pack 1",cell1)+
+'<path d="M138 53 H260 V68 H360" class="wire-pos"/><path d="M138 75 H285 V88 H360" class="wire-neg"/>'+motorSymbol(400,78,"Motor 1")+
+battery(20,142,"Pack 2",cell2)+
+'<path d="M138 157 H260 V172 H360" class="wire-pos"/><path d="M138 179 H285 V192 H360" class="wire-neg"/>'+motorSymbol(400,182,"Motor 2")+
 '<text x="474" y="74" class="svg-small">red +</text><text x="474" y="94" class="svg-small">dark −</text>'+
 '</svg>';
 }else if(n===2){
 svg='<svg viewBox="0 0 560 240" aria-hidden="true">'+
-battery(20,94,"One pack")+
+battery(20,94,"One pack",cell1)+
 '<path d="M138 109 H205 V48 H500 M205 48 V98 H270 M205 48 V158 H370" class="wire-pos"/>'+
 '<path d="M138 131 H228 V190 H500 M228 190 V122 H270 M228 190 V182 H370" class="wire-neg"/>'+
-motor(300,110,"Motor 1")+'<path d="M325 110 H350 V170 H370" class="wire-faint"/>'+motor(400,170,"Motor 2")+
+motor(300,110,"Motor 1")+''+motorSymbol(400,170,"Motor 2")+
 '<text x="392" y="30" class="svg-small">Both motors share + and −</text>'+
 '</svg>';
 }else{
 svg='<svg viewBox="0 0 560 220" aria-hidden="true">'+
-battery(20,84,"Battery pack")+
+battery(20,84,"Battery pack",cell1)+
 '<path d="M138 99 H250 V90 H360" class="wire-pos"/><path d="M138 121 H280 V130 H360" class="wire-neg"/>'+
 motor(400,110,"Motor 1")+
 '<text x="365" y="48" class="svg-small">red +</text><text x="430" y="166" class="svg-small">dark −</text>'+
 '</svg>';
 }
 $("wiringDiagram").innerHTML=svg;
-const p1=pack("1"),p2=sep?pack("2"):null,totalMass=100+n*motor.mass+p1.mass+(sep?p2.mass:0),maxV=motor.maxV;
+const p1=pack("1"),p2=sep?pack("2"):null,totalMass=100+n*motorSpec.mass+p1.mass+(sep?p2.mass:0),maxV=motorSpec.maxV;$("wheelOut").textContent=$("wheel").value+" in";
 $("mass").textContent=totalMass.toFixed(2)+" g";
 $("voltage").textContent=(p1.voltage||0).toFixed(2)+" V";
 const driver=+$("driver").value,driven=+$("driven").value,red=driven/driver;
