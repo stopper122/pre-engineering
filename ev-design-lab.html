@@ -11,41 +11,117 @@
 :root{--bg:#f8f6f3;--surface:#fff;--ink:#1d1a16;--muted:#5c564e;--line:#e2dcd4;--accent:#c4501a;--soft:#fbe8dd;--display:"Bricolage Grotesque",system-ui,sans-serif;--body:"Lexend",system-ui,sans-serif}
 @media(prefers-color-scheme:dark){:root{--bg:#15120f;--surface:#1f1b17;--ink:#f3eee8;--muted:#b3aaa0;--line:#3a332c;--accent:#ff9a5c;--soft:#3a2518;color-scheme:dark}}
 *{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font:1rem/1.55 var(--body)}.wrap{max-width:1000px;margin:auto;padding:24px 16px 56px;display:grid;gap:20px}header{display:grid;gap:8px}.eyebrow{font-size:.8rem;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);font-weight:700}h1,h2,h3{font-family:var(--display);line-height:1.15;margin:0}h1{font-size:clamp(2rem,6vw,3rem)}h2{font-size:1.4rem}p{margin:0}.muted{color:var(--muted)}.panel{background:var(--surface);border:2px solid var(--line);border-radius:16px;padding:18px;display:grid;gap:14px}.notice{background:var(--soft);border:2px solid var(--accent);border-radius:12px;padding:14px}.layout{display:grid;grid-template-columns:minmax(260px,.85fr) minmax(0,1.15fr);gap:16px}.controls{display:grid;gap:14px}.control{display:grid;gap:6px}.control label{font-weight:700}.control select,.control input{font:inherit;color:var(--ink)}select{background:var(--surface);border:2px solid var(--line);border-radius:9px;padding:10px;width:100%}.rangehead{display:flex;justify-content:space-between;gap:10px}.rangehead output{font-weight:700;color:var(--accent)}input[type=range]{width:100%;accent-color:var(--accent)}button{font:700 1rem var(--body);padding:11px 16px;border:0;border-radius:10px;background:var(--accent);color:#fff;cursor:pointer}button.secondary{background:var(--soft);color:var(--ink);border:2px solid var(--line)}button:focus-visible,select:focus-visible,input:focus-visible{outline:3px solid var(--accent);outline-offset:2px}.buttons{display:flex;flex-wrap:wrap;gap:8px}.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}.stat{background:var(--bg);border:1px solid var(--line);border-radius:10px;padding:10px}.stat b{display:block;font:800 1.35rem var(--display)}.stat span{font-size:.82rem;color:var(--muted)}.track{container-type:inline-size;height:180px;position:relative;overflow:hidden;border-radius:12px;background:linear-gradient(#dfe9dc 0 28%,#777 28% 78%,#dfe9dc 78%);border:1px solid var(--line)}.lane{position:absolute;top:53%;left:0;right:0;border-top:2px dashed #fff9}.start,.finish{position:absolute;top:34%;height:43%;width:4px;background:#fff}.start{left:4%}.finish{right:4%}.finish:after{content:"FINISH";position:absolute;top:-25px;right:-20px;font-size:.7rem;font-weight:700;color:var(--ink)}.car{position:absolute;left:4%;top:44%;width:50px;height:26px;border-radius:8px;background:var(--accent);border:3px solid #fff;box-shadow:0 2px 4px #0005;transform:translateX(0)}.car:before,.car:after{content:"";position:absolute;bottom:-7px;width:10px;height:10px;border-radius:50%;background:#24211e;border:1px solid white}.car:before{left:5px}.car:after{right:5px}.track-caption{position:absolute;bottom:5px;left:10px;right:10px;text-align:center;font-size:.8rem;color:white;text-shadow:0 1px 2px #000}.result{min-height:1.6em;font-weight:700}.tablewrap{overflow:auto}table{border-collapse:collapse;width:100%;min-width:550px}th,td{text-align:left;border-bottom:1px solid var(--line);padding:9px 7px}th{font-size:.82rem;color:var(--muted)}.small{font-size:.88rem}.formula{font-family:monospace;background:var(--bg);padding:10px;border-radius:8px;overflow-wrap:anywhere}a{color:var(--accent)}footer{font-size:.88rem;color:var(--muted)}@media(max-width:700px){.layout{grid-template-columns:1fr}.stats{grid-template-columns:1fr 1fr}.track{height:150px}}
-</style>
+.battery-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}.battery-grid label,.gear-fields label{display:grid;gap:4px;font-size:.9rem}.battery-grid input,.gear-fields select{width:100%;font:inherit;color:var(--ink);background:var(--surface);border:2px solid var(--line);border-radius:8px;padding:8px}.gear-fields{display:grid;grid-template-columns:1fr 1fr;gap:10px}.wiring-diagram{overflow:auto;background:var(--bg);border:1px solid var(--line);border-radius:12px;padding:8px}.wiring-diagram svg{display:block;width:100%;min-width:400px;height:auto}.wire-pos{stroke:#c44336;stroke-width:4;fill:none}.wire-neg{stroke:#36322f;stroke-width:4;fill:none}.wire-faint{stroke:var(--line);stroke-width:2;fill:none}.svg-label{fill:var(--ink);font:700 13px system-ui,sans-serif}.svg-small{fill:var(--muted);font:12px system-ui,sans-serif}.motor-symbol{fill:var(--surface);stroke:var(--accent);stroke-width:3}.result.warn{color:#b33825}@media(max-width:700px){.gear-fields{grid-template-columns:1fr}.battery-grid{gap:5px}}\n</style>
 </head>
 <body><main class="wrap">
 <header><span class="eyebrow">Electric Vehicle Project · Design Challenge</span><h1>EV Design &amp; Test Lab</h1><p>Build a virtual car, make a prediction, run it down the 30 ft course, then change one design choice and compare.</p></header>
 <div class="notice"><b>Model note:</b> This is a classroom simulation, not a precise prediction of your real car. Battery and motor behavior are simplified estimates. Use the runs to compare design choices and explain tradeoffs; real test results may be different.</div>
 <div class="layout">
 <section class="panel controls" aria-labelledby="design-title"><h2 id="design-title">1. Choose your design</h2>
-<div class="control"><label for="battery">Battery</label><select id="battery"><option value="aa">AA pack · balanced estimate</option><option value="d">D cell pack · higher current estimate</option><option value="9v">9V battery · higher voltage, limited current estimate</option></select><span class="small muted">The model assumes a classroom battery holder and a compatible motor.</span></div>
-<div class="control"><label for="motor">Motor</label><select id="motor"><option value="280">Pitsco 280 motor</option><option value="500">Pitsco 500 motor</option></select></div>
-<div class="control"><label for="gear">Gear reduction</label><select id="gear"><option value="1">1:1 · fastest wheel speed, least torque multiplication</option><option value="2">2:1 · moderate reduction</option><option value="3">3:1 · more torque, lower wheel speed</option><option value="4">4:1 · strongest reduction, lowest wheel speed</option></select></div>
+<div class="control"><label for="motor">Motor type (both motors must match)</label><select id="motor"><option value="280">Pitsco 280 · 39.36 g · up to 3.0 V</option><option value="500">Pitsco 500 · 40.76 g · up to 6.0 V</option><option value="minds">MINDS-i 7.2 V · 220 g · up to 7.2 V</option></select></div>
+<div class="control"><label for="motorCount">Number of motors</label><select id="motorCount"><option value="1">1 motor</option><option value="2">2 matching motors</option></select></div>
+<div class="control" id="motorWiringWrap" hidden><label for="motorWiring">How are the two motors powered?</label><select id="motorWiring"><option value="shared">Both motors in parallel on one battery pack</option><option value="separate">Separate battery pack for each motor</option></select><span class="small muted">Motor types cannot be mixed. The wiring diagram updates below.</span></div>
+<div class="control"><label for="cellWiring">How are the cells in each pack connected?</label><select id="cellWiring"><option value="series">Series · cell voltages add</option><option value="parallel">Parallel · voltage stays about 1.5 V</option></select></div>
+<div class="control">
+<label>Battery cells in Pack 1</label>
+<div class="battery-grid">
+<label for="aa1">AA <input id="aa1" type="number" min="0" max="20" value="2"></label>
+<label for="aaa1">AAA <input id="aaa1" type="number" min="0" max="20" value="0"></label>
+<label for="d1">D <input id="d1" type="number" min="0" max="20" value="0"></label>
+</div>
+<span class="small muted">You can use any mix. Each cell is modeled as 1.5 V nominal; cell size changes its mass.</span>
+</div>
+<div class="control" id="pack2" hidden>
+<label>Battery cells in Pack 2</label>
+<div class="battery-grid">
+<label for="aa2">AA <input id="aa2" type="number" min="0" max="20" value="2"></label>
+<label for="aaa2">AAA <input id="aaa2" type="number" min="0" max="20" value="0"></label>
+<label for="d2">D <input id="d2" type="number" min="0" max="20" value="0"></label>
+</div>
+<span class="small muted">This pack powers Motor 2 only.</span>
+</div>
+<div class="control"><label for="cellWiring">Cell wiring for each pack</label><select id="cellWiring2" aria-label="Cell wiring for each pack"><option value="series">Series</option><option value="parallel">Parallel</option></select></div>
+<div class="control gear-fields">
+<div><label for="driver">Motor gear</label><select id="driver"></select></div>
+<div><label for="driven">Axle gear</label><select id="driven"></select></div>
+</div>
+<p class="small muted">One gear pair only. Reduction = axle gear teeth ÷ motor gear teeth.</p>
 <div class="control"><div class="rangehead"><label for="wheel">Drive wheel diameter</label><output id="wheelOut">2.5 in</output></div><input id="wheel" type="range" min="1" max="5" step=".25" value="2.5"></div>
-<div class="control"><div class="rangehead"><label for="mass">Vehicle mass</label><output id="massOut">300 g</output></div><input id="mass" type="range" min="100" max="1000" step="25" value="300"></div>
-<div class="buttons"><button id="run">Run the car</button><button class="secondary" id="save">Save this run</button></div>
-<p class="small muted">Change one variable at a time when you are testing its effect.</p>
 </section>
-<section class="panel" aria-labelledby="test-title"><h2 id="test-title">2. Predict and test</h2>
-<div class="stats"><div class="stat"><b id="time">—</b><span>estimated time for 30 ft</span></div><div class="stat"><b id="speed">—</b><span>estimated average speed</span></div><div class="stat"><b id="top">—</b><span>estimated top speed</span></div></div>
-<div class="track" aria-label="Animated 30 foot race course"><div class="lane"></div><div class="start"></div><div class="finish"></div><div class="car" id="car"></div><div class="track-caption">30 ft · tile course</div></div>
-<p class="result" id="message" aria-live="polite">Choose a design and predict what you think will happen.</p>
-<div><h3>Think like an engineer</h3><p class="small">Which choice should improve acceleration? Which should improve top speed? What tradeoff do you expect? Write down your prediction before each run.</p></div></section></div>
-<section class="panel"><div class="rangehead"><h2>3. Compare your trials</h2><button class="secondary" id="clear">Clear trials</button></div><p class="small muted">Save a run after testing it. Give each trial a short label so you can compare what changed.</p><div class="control"><label for="label">Trial label</label><input id="label" type="text" placeholder="Example: 280 motor, 3:1 gears" style="font:inherit;padding:9px;border:2px solid var(--line);border-radius:9px;background:var(--surface);color:var(--ink)"></div><div class="tablewrap"><table><thead><tr><th>Trial</th><th>Battery</th><th>Motor</th><th>Gears</th><th>Wheel</th><th>Mass</th><th>Est. time</th></tr></thead><tbody id="trials"><tr><td colspan="7" class="muted">No saved runs yet.</td></tr></tbody></table></div><div class="buttons"><button class="secondary" id="download">Download trial data (CSV)</button></div></section>
-<details class="panel"><summary><b>How the estimate works</b></summary><p class="small">The model estimates wheel speed from motor speed, wheel diameter, and gear reduction. It estimates acceleration from motor choice, a simplified battery factor, gear reduction, and vehicle mass. It then estimates the time needed to cover 30 ft. The battery factors are teaching assumptions, not measured specifications for your exact cells, holder, wiring, or motor.</p><p class="formula">wheel speed ∝ motor speed × wheel diameter ÷ gear reduction<br>acceleration ∝ motor factor × battery factor × gear reduction ÷ vehicle mass</p><p class="small">This leaves out traction, wheel slip, alignment, friction, wiring losses, and changes in motor performance as the battery drains. In your report, compare the trend you expected with what the simulation showed, and explain why a real vehicle might differ.</p></details>
+<section class="panel" aria-labelledby="wiring-title"><h2 id="wiring-title">2. Wiring diagram</h2>
+<p id="wiringCaption" class="small">One motor connected to one battery pack.</p>
+<div id="wiringDiagram" class="wiring-diagram" role="img" aria-label="Motor and battery wiring diagram"></div>
+<div class="stats">
+<div class="stat"><b id="mass">—</b><span>calculated vehicle mass</span></div>
+<div class="stat"><b id="voltage">—</b><span>voltage at Motor 1</span></div>
+<div class="stat"><b id="ratio">—</b><span>gear reduction</span></div>
+</div>
+<p id="voltageWarning" class="result" aria-live="polite"></p>
+<div class="notice small"><b>Mass calculation:</b> 100 g base + selected motor weight(s) + battery cell weights. Battery cells: AA 22.87 g, AAA 11.09 g, D 87.68 g.</div>
+</section>
+</div>
+<section class="panel">
+<h2>3. Virtual test</h2>
+<p class="result">The vehicle choices, battery voltage, gear ratio, and total mass now calculate from your project rules. The 30 ft performance test is being calibrated with the motor investigation data so its results are based on your class measurements.</p>
+<p class="small muted">After the motor data is added, students will be able to run the car, compare designs, and save trial results.</p>
+</section>
 <footer><a href="index.html">← Back to Pre-Engineering Resources</a></footer>
 </main>
 <script>
-const $=id=>document.getElementById(id), factors={aa:.78,d:1,"9v":.62}, batteryNames={aa:"AA pack",d:"D cell pack","9v":"9V battery"};
-let last=null,anim=null;
-function design(){const battery=$("battery").value,motor=+$("motor").value,gear=+$("gear").value,wheel=+$("wheel").value,mass=+$("mass").value;const motorRpm=motor===280?1900:2600,motorFactor=motor===280?.82:1;const top=Math.min(4.8,(motorRpm*wheel*Math.PI/60/39.37/gear)*factors[battery]);const accel=Math.max(.18,(1.15*motorFactor*factors[battery]*gear)/(mass/300));const distance=9.144,acceleratingDistance=Math.min(distance,top*top/(2*accel));let seconds;if(acceleratingDistance>=distance){seconds=Math.sqrt(2*distance/accel)}else{seconds=top/accel+(distance-acceleratingDistance)/top}const avg=distance/seconds;return {battery,motor,gear,wheel,mass,top,accel,seconds,avg}}
-function refresh(){const d=design();$("wheelOut").textContent=d.wheel+" in";$("massOut").textContent=d.mass+" g";$("time").textContent=d.seconds.toFixed(2)+" s";$("speed").textContent=d.avg.toFixed(2)+" m/s";$("top").textContent=d.top.toFixed(2)+" m/s";last=d}
-["battery","motor","gear","wheel","mass"].forEach(id=>$(id).addEventListener("input",refresh));
-$("run").addEventListener("click",()=>{const d=design();last=d;if(anim)cancelAnimationFrame(anim);const car=$("car");car.style.transition="none";car.style.transform="translateX(0)";void car.offsetWidth;car.style.transition="transform "+Math.min(5,d.seconds/2)+"s linear";requestAnimationFrame(()=>car.style.transform="translateX(calc((100cqw - 78px) * .91))");$("message").textContent="Run complete: estimated 30 ft in "+d.seconds.toFixed(2)+" seconds. Try changing one design choice and compare.";});
-$("save").addEventListener("click",()=>{const d=last||design(),label=$("label").value.trim()||"Trial "+($("trials").children.length||1),rows=JSON.parse(localStorage.getItem("evTrials")||"[]");rows.push({label,battery:batteryNames[d.battery],motor:d.motor,gear:d.gear,wheel:d.wheel,mass:d.mass,seconds:d.seconds});localStorage.setItem("evTrials",JSON.stringify(rows));render()});
-function render(){const rows=JSON.parse(localStorage.getItem("evTrials")||"[]");$("trials").innerHTML=rows.length?rows.map(r=>"<tr><td>"+esc(r.label)+"</td><td>"+esc(r.battery)+"</td><td>"+r.motor+"</td><td>"+r.gear+":1</td><td>"+r.wheel+" in</td><td>"+r.mass+" g</td><td>"+Number(r.seconds).toFixed(2)+" s</td></tr>").join(""):'<tr><td colspan="7" class="muted">No saved runs yet.</td></tr>'}
-function esc(s){return String(s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]))}
-$("clear").addEventListener("click",()=>{localStorage.removeItem("evTrials");render()});
-$("download").addEventListener("click",()=>{const rows=JSON.parse(localStorage.getItem("evTrials")||"[]");const csv=["Trial,Battery,Motor,Gear reduction,Wheel diameter (in),Mass (g),Estimated time (s)",...rows.map(r=>[r.label,r.battery,r.motor,r.gear+":1",r.wheel,r.mass,Number(r.seconds).toFixed(2)].map(v=>'"'+String(v).replace(/"/g,'""')+'"').join(","))].join("\n");const a=document.createElement("a");a.href=URL.createObjectURL(new Blob([csv],{type:"text/csv"}));a.download="ev-simulator-trials.csv";a.click();URL.revokeObjectURL(a.href)});
-refresh();render();
+const $=id=>document.getElementById(id);
+const motorInfo={280:{name:"Pitsco 280",mass:39.36,maxV:3},500:{name:"Pitsco 500",mass:40.76,maxV:6},minds:{name:"MINDS-i 7.2 V",mass:220,maxV:7.2}};
+const cellMass={aa:22.87,aaa:11.09,d:87.68};
+const gears=[["Pitsco",10],["Pitsco",20],["Pitsco",30],["Pitsco",40],["Pitsco",50],["Pitsco",60],["LEGO",8],["LEGO",12],["LEGO",16],["LEGO",20],["LEGO",24],["LEGO",36],["LEGO",40]];
+function populateGears(id){$(id).innerHTML=gears.map(([brand,teeth])=>'<option value="'+teeth+'">'+brand+' '+teeth+'T</option>').join('')}
+populateGears("driver");populateGears("driven");$("driver").value="10";$("driven").value="20";
+function pack(which){const aa=+$("aa"+which).value||0,aaa=+$("aaa"+which).value||0,d=+$("d"+which).value||0,n=aa+aaa+d;const wiring=which==="1"?$("cellWiring").value:$("cellWiring2").value;return {n,mass:aa*cellMass.aa+aaa*cellMass.aaa+d*cellMass.d,voltage:n?(wiring==="series"?n*1.5:1.5):0,wiring}}
+function motorCount(){return +$("motorCount").value}
+function isSeparate(){return motorCount()===2&&$("motorWiring").value==="separate"}
+function renderWiring(){
+const n=motorCount(),sep=isSeparate(),motor=motorInfo[$("motor").value];
+$("motorWiringWrap").hidden=n!==2;$("pack2").hidden=!sep;
+$("wiringCaption").textContent=n===1?"One motor connected to one battery pack.":sep?"Each matching motor has its own battery pack and circuit.":"Both matching motors are wired in parallel across the same battery pack.";
+const cell1=pack("1"), cell2=sep?pack("2"):cell1;
+const battery=(x,y,label)=>'<rect x="'+x+'" y="'+y+'" width="118" height="52" rx="8" fill="var(--surface)" stroke="var(--line)" stroke-width="2"/><text x="'+(x+59)+'" y="'+(y+22)+'" text-anchor="middle" class="svg-label">'+label+'</text><text x="'+(x+59)+'" y="'+(y+40)+'" text-anchor="middle" class="svg-small">'+(cell1.wiring==="series"?"series":"parallel")+' cells</text>';
+const motor=(cx,cy,label)=>'<circle cx="'+cx+'" cy="'+cy+'" r="25" class="motor-symbol"/><text x="'+cx+'" y="'+(cy+5)+'" text-anchor="middle" class="svg-label">M</text><text x="'+cx+'" y="'+(cy+45)+'" text-anchor="middle" class="svg-small">'+label+'</text>';
+let svg;
+if(sep){
+svg='<svg viewBox="0 0 560 240" aria-hidden="true">'+
+'<text x="20" y="20" class="svg-small">Independent circuits · no shared motor supply</text>'+
+battery(20,38,"Pack 1")+
+'<path d="M138 53 H260 V68 H360" class="wire-pos"/><path d="M138 75 H285 V88 H360" class="wire-neg"/>'+motor(400,78,"Motor 1")+
+battery(20,142,"Pack 2")+
+'<path d="M138 157 H260 V172 H360" class="wire-pos"/><path d="M138 179 H285 V192 H360" class="wire-neg"/>'+motor(400,182,"Motor 2")+
+'<text x="474" y="74" class="svg-small">red +</text><text x="474" y="94" class="svg-small">dark −</text>'+
+'</svg>';
+}else if(n===2){
+svg='<svg viewBox="0 0 560 240" aria-hidden="true">'+
+battery(20,94,"One pack")+
+'<path d="M138 109 H205 V48 H500 M205 48 V98 H270 M205 48 V158 H370" class="wire-pos"/>'+
+'<path d="M138 131 H228 V190 H500 M228 190 V122 H270 M228 190 V182 H370" class="wire-neg"/>'+
+motor(300,110,"Motor 1")+'<path d="M325 110 H350 V170 H370" class="wire-faint"/>'+motor(400,170,"Motor 2")+
+'<text x="392" y="30" class="svg-small">Both motors share + and −</text>'+
+'</svg>';
+}else{
+svg='<svg viewBox="0 0 560 220" aria-hidden="true">'+
+battery(20,84,"Battery pack")+
+'<path d="M138 99 H250 V90 H360" class="wire-pos"/><path d="M138 121 H280 V130 H360" class="wire-neg"/>'+
+motor(400,110,"Motor 1")+
+'<text x="365" y="48" class="svg-small">red +</text><text x="430" y="166" class="svg-small">dark −</text>'+
+'</svg>';
+}
+$("wiringDiagram").innerHTML=svg;
+const p1=pack("1"),p2=sep?pack("2"):null,totalMass=100+n*motor.mass+p1.mass+(sep?p2.mass:0),maxV=motor.maxV;
+$("mass").textContent=totalMass.toFixed(2)+" g";
+$("voltage").textContent=(p1.voltage||0).toFixed(2)+" V";
+const driver=+$("driver").value,driven=+$("driven").value,red=driven/driver;
+$("ratio").textContent=red.toFixed(2)+":1";
+const bad1=p1.n===0||p1.voltage>maxV,bad2=sep&&(p2.n===0||p2.voltage>maxV);
+let warning="";
+if(bad1||bad2){warning=(p1.n===0||bad2&&p2.n===0)?"Add at least one cell to each pack.":"Battery pack voltage exceeds the selected motor's "+maxV+" V maximum."}
+$("voltageWarning").textContent=warning;$("voltageWarning").className="result"+(warning?" warn":"");
+}
+["motor","motorCount","motorWiring","cellWiring","cellWiring2","aa1","aaa1","d1","aa2","aaa2","d2","driver","driven","wheel"].forEach(id=>$(id).addEventListener("input",renderWiring));
+$("motorCount").addEventListener("change",renderWiring);$("motorWiring").addEventListener("change",renderWiring);
+renderWiring();
 </script></body></html>
